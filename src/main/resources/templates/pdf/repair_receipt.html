@@ -1,0 +1,83 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <title>Repair Receipt</title>
+    <style>
+        /* Similar minimalist style, compact */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto; color:#222; font-size:12px; }
+        .wrap { max-width:600px; margin:0 auto; }
+        header { display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding-bottom:10px; margin-bottom:12px;}
+        .logo img{ height:48px; }
+        .title { font-weight:700; font-size:16px; }
+        .details { margin-bottom:10px; }
+        table { width:100%; border-collapse:collapse; margin-bottom:10px; }
+        td { padding:6px 0; vertical-align:top; }
+        .label { color:#666; width:34%; }
+        .value { color:#111; width:66%; }
+        footer { border-top:1px dashed #eee; padding-top:8px; font-size:11px; color:#666; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <header>
+        <div>
+            <img th:if="${logoBase64 != ''}" th:src="${logoBase64}" alt="logo"/>
+        </div>
+        <div style="text-align:right;">
+            <div class="title" th:text="${shopName}">Saurabh Mobile Shop</div>
+            <div th:text="${shopPhone}">+91 ...</div>
+        </div>
+    </header>
+
+    <div class="details">
+        <table>
+            <tr>
+                <td class="label">Job No</td>
+                <td class="value" th:text="${jobNumber}">RJ-0001</td>
+            </tr>
+            <tr>
+                <td class="label">Date</td>
+                <td class="value" th:text="${date}">2025-12-11</td>
+            </tr>
+            <tr>
+                <td class="label">Customer</td>
+                <td class="value" th:if="${customer != null}" th:text="${customer.name}">Name</td>
+            </tr>
+            <tr>
+                <td class="label">Phone</td>
+                <td class="value" th:if="${customer != null}" th:text="${customer.phone}">9999999999</td>
+            </tr>
+            <tr>
+                <td class="label">Device</td>
+                <td class="value" th:text="${deviceBrand} + ' / ' + ${deviceModel}">Brand/Model</td>
+            </tr>
+            <tr>
+                <td class="label">IMEI</td>
+                <td class="value" th:text="${imei}">123456789012345</td>
+            </tr>
+            <tr>
+                <td class="label">Issue</td>
+                <td class="value" th:text="${issueDescription}">Screen broken</td>
+            </tr>
+            <tr>
+                <td class="label">Estimated Cost</td>
+                <td class="value" th:text="${estimatedCost}">500.00</td>
+            </tr>
+            <tr>
+                <td class="label">Advance Paid</td>
+                <td class="value" th:text="${advancePaid}">100.00</td>
+            </tr>
+            <tr>
+                <td class="label">Pending</td>
+                <td class="value" th:text="${pendingAmount}">400.00</td>
+            </tr>
+        </table>
+    </div>
+
+    <footer>
+        <div class="small">Keep this receipt. Repair terms and warranty conditions apply as described by Saurabh Mobile Shop.</div>
+    </footer>
+</div>
+</body>
+</html>

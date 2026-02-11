@@ -1,0 +1,164 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"/>
+    <title>Invoice</title>
+
+    <style>
+        @page { margin: 20mm; }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            color: #222;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .shop {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .meta {
+            text-align: right;
+            font-size: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        th, td {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f7f7f7;
+            font-weight: bold;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .total-row td {
+            border-top: 2px solid #ddd;
+            font-weight: bold;
+        }
+
+        footer {
+            margin-top: 20px;
+            font-size: 11px;
+            color: #666;
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <header>
+        <div>
+            <div class="shop" th:text="${shopName}">Shop Name</div>
+            <div th:text="${shopAddress}">Address</div>
+            <div th:text="${shopPhone}">Phone</div>
+        </div>
+
+        <div class="meta">
+            <div><strong>Invoice</strong></div>
+            <div th:text="${invoiceNumber}">INV-001</div>
+            <div th:text="${date}">2025-01-01</div>
+            <div th:text="${gstNumber}">GSTIN</div>
+        </div>
+    </header>
+
+    <div>
+        <strong>Bill To:</strong><br/>
+        <span th:text="${customer.name}">Customer</span><br/>
+        <span th:text="${customer.phone}">Phone</span><br/>
+        <span th:text="${customer.address}">Address</span>
+    </div>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Product</th>
+            <th>Qty</th>
+            <th>Rate</th>
+            <th class="right">Amount</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        <tr th:each="item : ${items}">
+            <td th:text="${item.productName}">Product</td>
+            <td th:text="${item.quantity}">1</td>
+            <td th:text="${item.unitPrice}">100</td>
+            <td class="right" th:text="${item.lineTotal}">100</td>
+        </tr>
+        </tbody>
+
+        <tfoot>
+        <tr>
+            <td colspan="3" class="right">Sub Total</td>
+            <td class="right" th:text="${subTotal}">0</td>
+        </tr>
+
+        <tr th:if="${cgstAmount > 0}">
+            <td colspan="3" class="right">CGST</td>
+            <td class="right" th:text="${cgstAmount}">0</td>
+        </tr>
+
+        <tr th:if="${sgstAmount > 0}">
+            <td colspan="3" class="right">SGST</td>
+            <td class="right" th:text="${sgstAmount}">0</td>
+        </tr>
+
+        <tr th:if="${igstAmount > 0}">
+            <td colspan="3" class="right">IGST</td>
+            <td class="right" th:text="${igstAmount}">0</td>
+        </tr>
+
+        <tr class="total-row">
+            <td colspan="3" class="right">Grand Total</td>
+            <td class="right" th:text="${grandTotal}">0</td>
+        </tr>
+
+        <tr>
+            <td colspan="3" class="right">Amount Received</td>
+            <td class="right" th:text="${amountReceived}">0</td>
+        </tr>
+
+        <tr>
+            <td colspan="3" class="right">Pending</td>
+            <td class="right" th:text="${pendingAmount}">0</td>
+        </tr>
+        </tfoot>
+    </table>
+
+    <footer>
+        Payment Mode: <span th:text="${paymentMode}"></span><br/>
+        Notes: <span th:text="${notes}"></span><br/><br/>
+        This is a computer generated invoice.
+    </footer>
+
+</div>
+</body>
+</html>
