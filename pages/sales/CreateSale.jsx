@@ -61,9 +61,10 @@ const CreateSale = () => {
 
     useEffect(() => {
         const subtotal = items.reduce(
-            (sum, item) => sum + (item.price * item.quantity),
-            0
-        );
+    (sum, item) => sum + (Number(item.total) || 0),
+    0
+);
+
         const gstAmount = (subtotal * gstPercentage) / 100;
         const cgst = gstAmount / 2;
         const sgst = gstAmount / 2;
@@ -117,14 +118,18 @@ const CreateSale = () => {
             return;
         }
 
-        const newItem = {
-            key: Date.now(),
-            type: itemType,
-            name: itemName.trim(),
-            quantity: Number(itemQty),
-            price: Number(itemPrice),
-            total: Number(itemQty) * Number(itemPrice),
-        };
+       const qty = Number(itemQty) || 0;
+const price = Number(itemPrice) || 0;
+
+const newItem = {
+    key: Date.now(),
+    type: itemType,
+    name: itemName.trim(),
+    quantity: qty,
+    price: price,
+    total: qty * price,
+};
+
 
         setItems([...items, newItem]);
         
@@ -157,12 +162,14 @@ const CreateSale = () => {
             // Ensure all values are proper types
             const saleData = {
                 customerId: Number(selectedCustomer.id),
-                items: items.map(item => ({
-                    itemName: String(item.name),
-                    quantity: Number(item.quantity),
-                    price: Number(item.price),
-                    type: String(item.type),
-                })),
+         items: items.map(item => ({
+    itemName: String(item.name),
+    quantity: Number(item.quantity) || 0,
+    price: Number(item.price) || 0,   // 🔥 THIS IS THE FIX
+    type: String(item.type),
+})),
+
+
                 gstRate: Number(gstPercentage),
                 gstType: 'CGST_SGST',
                 amountReceived: Number(receivedAmount),

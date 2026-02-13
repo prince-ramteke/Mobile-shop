@@ -7,7 +7,8 @@ const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-    // Lazy initialization with error handling
+
+    // Load user from localStorage at startup
     const [user, setUser] = useState(() => {
         try {
             return authService.getCurrentUser();
@@ -19,16 +20,29 @@ export const AuthProvider = ({ children }) => {
 
     const [loading, setLoading] = useState(false);
 
+    // 🔑 FIXED LOGIN FUNCTION
     const login = useCallback(async (username, password) => {
         try {
             setLoading(true);
-            const response = await authService.login(username, password);
-            if (response.user) {
-                setUser(response.user);
-                message.success('Login successful');
-                return { success: true };
+
+            const data = await authService.login(username, password);
+
+            // Backend returns: username, token, role
+            if (!data || !data.token) {
+                throw new Error("Token missing in response");
             }
-            return { success: false };
+
+            const loggedUser = {
+                username: data.username,
+                role: data.role
+            };
+
+            setUser(loggedUser);
+
+            message.success('Login successful');
+
+            return { success: true };
+
         } catch (error) {
             console.error('Login error:', error);
             message.error(error.response?.data?.message || 'Invalid credentials');
@@ -46,7 +60,6 @@ export const AuthProvider = ({ children }) => {
 
     const hasRole = (role) => {
         if (!user || !user.role) return false;
-        // Handle "ROLE_ADMIN", "ADMIN", etc.
         const userRole = String(user.role).replace('ROLE_', '');
         return userRole === role;
     };
@@ -68,3 +81,5 @@ export const AuthProvider = ({ children }) => {
         </AuthContext.Provider>
     );
 };
+
+export default AuthContext;

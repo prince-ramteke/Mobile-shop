@@ -37,19 +37,19 @@ const RepairsList = () => {
         loadRepairs();
     }, []);
 
-    const loadRepairs = async () => {
-        try {
-            setLoading(true);
-            const data = await repairService.getAll();
-            console.log('Loaded repairs:', data);
-            setRepairs(data || []);
-        } catch (error) {
-            console.error('Failed to load repairs:', error);
-            message.error('Failed to load repairs: ' + (error.response?.data?.message || error.message));
-        } finally {
-            setLoading(false);
-        }
-    };
+   const loadRepairs = async () => {
+    try {
+        setLoading(true);
+        const data = await repairService.getAll();
+        setRepairs(data || []);
+    } catch (error) {
+        console.error("Failed to load repairs", error);
+        setRepairs([]);
+    } finally {
+        setLoading(false);
+    }
+};
+
 
     const handleSearch = (value) => {
         setSearchText(value.toLowerCase());
@@ -140,7 +140,7 @@ const RepairsList = () => {
                     <Tooltip title="Edit">
                         <Button 
                             icon={<EditOutlined />} 
-                            onClick={() => navigate(`/repairs/${record.id}/edit`)}
+                            onClick={() => navigate(`/repairs/edit/${record.id}`)}
                         />
                     </Tooltip>
                     <Tooltip title="Send WhatsApp">
@@ -178,7 +178,7 @@ const RepairsList = () => {
                         <Button 
                             type="primary" 
                             icon={<PlusOutlined />}
-                            onClick={() => navigate('/repairs/new')}
+                            onClick={() => navigate('/repairs/create')}
                         >
                             New Repair
                         </Button>

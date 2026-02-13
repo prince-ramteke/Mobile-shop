@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+
 import {
     Card,
     Table,
@@ -21,7 +23,7 @@ import {
     PrinterOutlined,
     FilterOutlined,
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+
 import saleService from '../../api/saleService';
 import Loading from '../../components/common/Loading';
 import EmptyState from '../../components/common/EmptyState';
@@ -36,9 +38,12 @@ const SaleList = () => {
     const [statusFilter, setStatusFilter] = useState('all');
     const navigate = useNavigate();
 
-    useEffect(() => {
-        loadSales();
-    }, []);
+    const location = useLocation();
+
+useEffect(() => {
+    loadSales();
+}, [location.key]);   // 🔥 reload every time you return to this page
+
 
     const loadSales = async () => {
         try {
@@ -106,12 +111,13 @@ const SaleList = () => {
                 <Text strong>₹{(total || 0).toLocaleString()}</Text>
             ),
         },
-        {
-            title: 'Received',
-            dataIndex: 'receivedAmount',
-            key: 'receivedAmount',
-            render: (amount) => `₹${(amount || 0).toLocaleString()}`,
-        },
+       {
+    title: 'Received',
+    dataIndex: 'amountReceived',
+    key: 'amountReceived',
+    render: (amount) => `₹${(amount || 0).toLocaleString()}`,
+},
+
         {
             title: 'Pending',
             dataIndex: 'pendingAmount',

@@ -149,16 +149,19 @@ const SaleDetails = () => {
             width: 80,
         },
         {
-            title: 'Price',
-            dataIndex: 'price',  // Changed from unitPrice to price
-            key: 'price',
-            render: (price) => `₹${Number(price)?.toLocaleString() || 0}`,
-        },
-        {
-            title: 'Total',
-            key: 'total',
-            render: (_, record) => `₹${((record.quantity || 0) * (record.price || 0))?.toLocaleString()}`,
-        },
+    title: 'Price',
+    key: 'price',
+    render: (_, record) =>
+        `₹${Number(record.unitPrice ?? record.price ?? 0).toLocaleString()}`,
+},
+
+       {
+    title: 'Total',
+    key: 'total',
+    render: (_, record) =>
+        `₹${Number(record.lineTotal ?? (record.quantity || 0) * (record.unitPrice ?? record.price ?? 0)).toLocaleString()}`,
+},
+
     ];
 
     return (

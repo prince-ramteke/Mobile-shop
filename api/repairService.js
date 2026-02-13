@@ -6,21 +6,28 @@ import axiosClient from './axiosClient';
  */
 const repairService = {
     // Get all repairs with pagination and filters
-   getAll: async (params = {}) => {
+getAll: async (params = {}) => {
     const queryParams = {
         query: params.query || '',
         page: params.page || 0,
-        size: params.size || 1000  // ✅ INCREASE SIZE to get all repairs
+        size: params.size || 1000
     };
+
     const response = await axiosClient.get('/api/repairs/search', { params: queryParams });
-    return response.data;
+
+    // ⭐ IMPORTANT FIX
+    return response.data?.content || [];
 },
 
+
     // Get repair by ID
-    getById: async (id) => {
-        const response = await axiosClient.get(`/api/repairs/${id}`);
-        return response.data;
-    },
+getById: async (id) => {
+  const res = await axiosClient.get(`/api/repairs/${id}`);
+  return res.data;
+},
+
+
+
 
     // Create new repair job
     create: async (repairData) => {

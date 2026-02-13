@@ -23,6 +23,12 @@ import DateRangeReport from './pages/reports/DateRangeReport';
 import GstReport from './pages/reports/GstReport';
 import Settings from './pages/settings/Settings';
 
+
+import RepairDetails from './pages/repairs/RepairDetails';
+import RepairEdit from './pages/repairs/RepairEdit';
+
+
+
 // App content with theme-aware Ant Design config
 const AppContent = () => {
   const { isDark } = useTheme();
@@ -75,9 +81,18 @@ const AppContent = () => {
             <Route path="sales/create" element={<CreateSale />} />
             <Route path="sales/:id" element={<SaleDetails />} />
 
-            {/* Repairs */}
-            <Route path="repairs" element={<RepairList />} />
-            <Route path="repairs/create" element={<CreateRepair />} />
+{/* Repairs */}
+<Route path="repairs" element={<RepairList />} />
+<Route path="repairs/create" element={<CreateRepair />} />
+
+{/* ⚠️ EDIT must come BEFORE :id */}
+<Route path="repairs/edit/:id" element={<RepairEdit />} />
+
+{/* View Repair */}
+<Route path="repairs/:id" element={<RepairDetails />} />
+
+
+
 
             {/* Dues */}
             <Route path="dues" element={<DueList />} />
