@@ -65,6 +65,67 @@ public class RepairController {
     }
 
 
+    @PutMapping("/{id}/receive-payment")
+    public ResponseEntity<?> receivePayment(
+            @PathVariable Long id,
+            @RequestParam("amount") String amountStr
+    ) {
+        try {
+            // Convert safely
+            BigDecimal amount;
+            try {
+                amount = new BigDecimal(amountStr);
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "Invalid amount format"
+                ));
+            }
+
+            if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "Amount must be greater than zero"
+                ));
+            }
+
+            // Load job WITH customer
+            RepairJob job = repairJobRepository.findByIdWithCustomer(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Repair job not found"));
+
+            BigDecimal advance = job.getAdvancePaid() == null ? BigDecimal.ZERO : job.getAdvancePaid();
+            BigDecimal finalCost = job.getFinalCost() == null ? BigDecimal.ZERO : job.getFinalCost();
+
+            // Prevent overpayment
+            if (advance.add(amount).compareTo(finalCost) > 0) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "Payment exceeds total cost"
+                ));
+            }
+
+            // Update advance
+            job.setAdvancePaid(advance.add(amount));
+
+            // Recalculate pending
+            job.setPendingAmount(finalCost.subtract(job.getAdvancePaid()));
+
+            // Auto mark delivered if fully paid
+            if (job.getPendingAmount().compareTo(BigDecimal.ZERO) == 0) {
+                job.setStatus(RepairStatus.DELIVERED);
+                job.setDeliveredAt(java.time.LocalDateTime.now());
+            }
+
+            RepairJob saved = repairJobRepository.save(job);
+
+            return ResponseEntity.ok(repairJobMapper.toResponse(saved));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Payment failed",
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
 
 
 
