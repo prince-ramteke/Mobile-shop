@@ -250,7 +250,8 @@ public class SaleServiceImpl implements SaleService {
     @Override
     @Transactional(readOnly = true)
     public Page<SaleResponse> listSales(String start, String end, Boolean pendingOnly, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("saleDate").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+
         Page<Sale> sales = saleRepository.findSales(
                 start != null ? LocalDate.parse(start) : null,
                 end != null ? LocalDate.parse(end) : null,

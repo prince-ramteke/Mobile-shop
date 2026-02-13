@@ -17,17 +17,18 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     // SALES LISTING
     // --------------------------------
     @Query("""
-        SELECT s FROM Sale s
-        WHERE (:start IS NULL OR s.saleDate >= :start)
-        AND   (:end IS NULL OR s.saleDate <= :end)
-        AND   (:pendingOnly = false OR s.pendingAmount > 0)
-        """)
+    SELECT s FROM Sale s
+    WHERE (:start IS NULL OR s.saleDate >= :start)
+    AND   (:end IS NULL OR s.saleDate <= :end)
+    AND   (:pendingOnly IS NULL OR :pendingOnly = false OR s.pendingAmount > 0)
+""")
     Page<Sale> findSales(
             @Param("start") LocalDate start,
             @Param("end") LocalDate end,
             @Param("pendingOnly") Boolean pendingOnly,
             Pageable pageable
     );
+
 
     // --------------------------------
     // DASHBOARD QUERIES

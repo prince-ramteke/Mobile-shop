@@ -25,15 +25,19 @@ public interface RepairJobRepository extends JpaRepository<RepairJob, Long> {
     Long countByPendingAmountGreaterThan(java.math.BigDecimal amount);
 
     @Query("""
-    SELECT r FROM RepairJob r
-    WHERE LOWER(r.customer.name) LIKE LOWER(CONCAT('%', :query, '%'))
+SELECT r FROM RepairJob r
+WHERE (:query IS NULL OR :query = '' 
+       OR LOWER(r.customer.name) LIKE LOWER(CONCAT('%', :query, '%'))
        OR LOWER(r.customer.phone) LIKE LOWER(CONCAT('%', :query, '%'))
        OR LOWER(r.deviceBrand) LIKE LOWER(CONCAT('%', :query, '%'))
        OR LOWER(r.deviceModel) LIKE LOWER(CONCAT('%', :query, '%'))
        OR LOWER(r.imei) LIKE LOWER(CONCAT('%', :query, '%'))
        OR LOWER(r.issueDescription) LIKE LOWER(CONCAT('%', :query, '%'))
-    """)
+)
+ORDER BY r.id DESC
+""")
     Page<RepairJob> search(@Param("query") String query, Pageable pageable);
+
 
     @Query("""
     SELECT r FROM RepairJob r
@@ -50,16 +54,8 @@ public interface RepairJobRepository extends JpaRepository<RepairJob, Long> {
     Long countTodayJobs(@Param("date") LocalDate date);
 
 
-    // ✅ ADD THIS - Search method
-    @Query("SELECT r FROM RepairJob r JOIN r.customer c WHERE " +
-            "LOWER(c.name) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-            "c.phone LIKE CONCAT('%', :query, '%') OR " +
-            "LOWER(r.imei) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-            "LOWER(r.deviceModel) LIKE LOWER(CONCAT('%', :query, '%'))")
-    Page<RepairJob> searchRepairs(@Param("query") String query, Pageable pageable);
+    @Query("SELECT r FROM RepairJob r LEFT JOIN FETCH r.customer WHERE r.id = :id")
+    Optional<RepairJob> findByIdWithCustomer(@Param("id") Long id);
 
-    // Simplified version if above doesn't work
-    Page<RepairJob> findByCustomerNameContainingOrCustomerPhoneContainingOrImeiContainingOrDeviceModelContaining(
-            String name, String phone, String imei, String model, Pageable pageable
-    );
+
 }

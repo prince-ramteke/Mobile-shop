@@ -10,7 +10,10 @@ import com.shopmanager.mapper.RepairJobMapper;
 import com.shopmanager.repository.CustomerRepository;
 import com.shopmanager.repository.RepairJobRepository;
 import com.shopmanager.service.InvoiceNumberService;
+import com.shopmanager.service.RepairJobService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +29,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RepairController {
 
+    private final RepairJobService repairJobService;
     private final RepairJobRepository repairJobRepository;
     private final CustomerRepository customerRepository;
     private final RepairJobMapper repairJobMapper;
@@ -41,6 +45,29 @@ public class RepairController {
         return ResponseEntity.ok(stats);
     }
 
+    // 🔹 SEARCH MUST COME BEFORE {id}
+    @GetMapping("/search")
+    public ResponseEntity<Page<RepairJobResponse>> search(
+            @RequestParam(required = false) String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        Page<RepairJobResponse> repairs = repairJobService.searchRepairs(query, page, size);
+        return ResponseEntity.ok(repairs);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<RepairJobResponse> get(@PathVariable Long id) {
+        RepairJob job = repairJobRepository.findByIdWithCustomer(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Repair job not found"));
+
+        return ResponseEntity.ok(repairJobMapper.toResponse(job));
+    }
+
+
+
+
+
     @GetMapping
     public ResponseEntity<List<RepairJobResponse>> list() {
         List<RepairJob> jobs = repairJobRepository.findAll();
@@ -54,12 +81,12 @@ public class RepairController {
         return ResponseEntity.ok(responses);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<RepairJobResponse> get(@PathVariable Long id) {
-        RepairJob job = repairJobRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Repair job not found"));
-        return ResponseEntity.ok(repairJobMapper.toResponse(job));
-    }
+//    @GetMapping("/{id}")
+//    public ResponseEntity<RepairJobResponse> get(@PathVariable Long id) {
+//        RepairJob job = repairJobRepository.findById(id)
+//                .orElseThrow(() -> new ResourceNotFoundException("Repair job not found"));
+//        return ResponseEntity.ok(repairJobMapper.toResponse(job));
+//    }
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody RepairJobRequest request) {
@@ -118,38 +145,61 @@ public class RepairController {
         }
     }
 
+
+    @Transactional
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody RepairJobRequest request) {
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody RepairJobRequest request)
+ {
         try {
-            RepairJob existing = repairJobRepository.findById(id)
+            // ⭐ LOAD WITH CUSTOMER (IMPORTANT)
+            RepairJob existing = repairJobRepository.findByIdWithCustomer(id)
                     .orElseThrow(() -> new ResourceNotFoundException("Repair job not found"));
 
+            // ⭐ FETCH CUSTOMER SAFELY
             Customer customer = customerRepository.findById(request.getCustomerId())
                     .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
 
-            // Update fields
+            // ⭐ SET CUSTOMER (IMPORTANT)
             existing.setCustomer(customer);
+
+            // Update fields
             existing.setDeviceBrand(request.getDeviceBrand());
             existing.setDeviceModel(request.getDeviceModel());
             existing.setImei(request.getImei());
             existing.setIssueDescription(request.getIssueDescription());
-            existing.setEstimatedCost(request.getEstimatedCost() != null ? request.getEstimatedCost() : BigDecimal.ZERO);
-            existing.setFinalCost(request.getFinalCost() != null ? request.getFinalCost() : existing.getEstimatedCost());
-            existing.setAdvancePaid(request.getAdvancePaid() != null ? request.getAdvancePaid() : BigDecimal.ZERO);
-            existing.setStatus(request.getStatus() != null ? request.getStatus() : RepairStatus.PENDING);
 
-            // Recalculate pending
+            existing.setEstimatedCost(
+                    request.getEstimatedCost() != null ? request.getEstimatedCost() : existing.getEstimatedCost()
+            );
+
+            existing.setFinalCost(
+                    request.getFinalCost() != null ? request.getFinalCost() : existing.getEstimatedCost()
+            );
+
+            existing.setAdvancePaid(
+                    request.getAdvancePaid() != null ? request.getAdvancePaid() : existing.getAdvancePaid()
+            );
+
+            existing.setStatus(
+                    request.getStatus() != null ? request.getStatus() : existing.getStatus()
+            );
+
+            // ⭐ Recalculate pending
             existing.recalculatePending();
 
             RepairJob saved = repairJobRepository.save(existing);
+
             return ResponseEntity.ok(repairJobMapper.toResponse(saved));
+
         } catch (Exception e) {
+            e.printStackTrace();   // ⭐ VERY IMPORTANT FOR DEBUG
             Map<String, String> error = new HashMap<>();
             error.put("error", "Update failed");
             error.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(error);
         }
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
