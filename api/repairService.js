@@ -64,6 +64,11 @@ receivePayment: async (id, amount) => {
 },
 
 
+// ⭐ Get payment history (ledger) of a repair
+getPayments: async (id) => {
+    const res = await axiosClient.get(`/api/repairs/${id}/payments`);
+    return res.data || [];
+},
 
 
 
@@ -149,6 +154,15 @@ receivePayment: async (id, amount) => {
         const statusOption = repairService.statusOptions.find(s => s.value === status);
         return statusOption?.label || status;
     },
+
+    // ================= DOWNLOAD REPAIR INVOICE PDF =================
+downloadInvoice: async (id) => {
+    const response = await axiosClient.get(`/api/repairs/${id}/invoice`, {
+        responseType: "blob",
+    });
+    return response.data;
+},
 };
+
 
 export default repairService;
