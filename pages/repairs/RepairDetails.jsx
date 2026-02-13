@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, Descriptions, Tag, Button, message } from 'antd';
+import { Card, Descriptions, Tag, Button, message, Modal, InputNumber } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
 import repairService from '../../api/repairService';
 import Loading from '../../components/common/Loading';
@@ -8,6 +8,9 @@ const RepairDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [repair, setRepair] = useState(null);
+  const [paymentModal, setPaymentModal] = useState(false);
+const [paymentAmount, setPaymentAmount] = useState(0);
+
   const [loading, setLoading] = useState(true);
   
 useEffect(() => {
@@ -33,11 +36,24 @@ useEffect(() => {
   return (
     <Card
       title={`Repair Details — ${repair.jobNumber}`}
-      extra={
-        <Button onClick={() => navigate(`/repairs/edit/${id}`)}>
-          Edit
-        </Button>
-      }
+     extra={
+  <>
+    <Button
+  type="primary"
+  style={{ marginRight: 8 }}
+  disabled={repair.pendingAmount <= 0}
+  onClick={() => setPaymentModal(true)}
+>
+  Receive Payment
+</Button>
+
+
+    <Button onClick={() => navigate(`/repairs/edit/${id}`)}>
+      Edit
+    </Button>
+  </>
+}
+
     >
       <Descriptions column={2} bordered>
         <Descriptions.Item label="Customer">
@@ -87,6 +103,57 @@ useEffect(() => {
           {repair.notes}
         </Descriptions.Item>
       </Descriptions>
+      <Modal
+  title="Receive Payment"
+  open={paymentModal}
+  onCancel={() => setPaymentModal(false)}
+
+
+onOk={async () => {
+  if (!paymentAmount || paymentAmount <= 0) {
+    message.error("Enter valid amount");
+    return;
+  }
+
+  if (paymentAmount > repair.pendingAmount) {
+    message.error("Amount cannot exceed pending");
+    return;
+  }
+
+ try {
+  const res = await repairService.receivePayment(id, paymentAmount);
+
+  if (res?.warning) {
+    message.warning("Payment may have succeeded. Please check updated amount.");
+  } else {
+    message.success("Payment received");
+  }
+
+  setPaymentModal(false);
+  setPaymentAmount(0);
+
+  setTimeout(() => {
+    loadRepair();
+  }, 150);
+
+} catch (err) {
+  const msg = err?.error || err?.message || "Payment failed";
+  message.error(msg);
+}
+
+}}
+
+>
+  <InputNumber
+  style={{ width: "100%" }}
+  min={1}
+  max={repair.pendingAmount}
+  value={paymentAmount}
+  onChange={setPaymentAmount}
+/>
+
+</Modal>
+
     </Card>
   );
 };

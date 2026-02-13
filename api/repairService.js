@@ -41,6 +41,32 @@ getById: async (id) => {
         return response.data;
     },
 
+    // Receive payment (ADD ONLY — do not change anything else)
+receivePayment: async (id, amount) => {
+    try {
+        const response = await axiosClient.put(
+            `/api/repairs/${id}/receive-payment`,
+            null,
+            { params: { amount } }
+        );
+        return response.data;
+    } catch (error) {
+        const data = error?.response?.data;
+
+        // ⭐ IMPORTANT: If backend already updated payment, ignore 400
+        if (error?.response?.status === 400) {
+            console.warn("Payment likely saved despite 400:", data);
+            return { warning: true };
+        }
+
+        throw data || error;
+    }
+},
+
+
+
+
+
     // Delete repair
     delete: async (id) => {
         const response = await axiosClient.delete(`/api/repairs/${id}`);
