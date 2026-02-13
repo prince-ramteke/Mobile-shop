@@ -1,12 +1,15 @@
-<!doctype html>
-<html xmlns:th="http://www.thymeleaf.org">
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+
 <head>
-    <meta charset="utf-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     <title>Invoice</title>
 
     <style>
-        @page { margin: 20mm; }
-
         body {
             font-family: Arial, sans-serif;
             font-size: 12px;
@@ -14,41 +17,17 @@
         }
 
         .container {
-            max-width: 800px;
-            margin: auto;
+            width: 100%;
         }
 
-        header {
-            display: flex;
-            justify-content: space-between;
+        .header-table {
+            width: 100%;
             border-bottom: 1px solid #ddd;
-            padding-bottom: 10px;
             margin-bottom: 15px;
         }
 
         .shop {
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .meta {
-            text-align: right;
-            font-size: 12px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 12px;
-        }
-
-        th, td {
-            padding: 8px;
-            border-bottom: 1px solid #eee;
-        }
-
-        th {
-            background: #f7f7f7;
+            font-size: 18px;
             font-weight: bold;
         }
 
@@ -56,12 +35,27 @@
             text-align: right;
         }
 
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 6px;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f7f7f7;
+        }
+
         .total-row td {
             border-top: 2px solid #ddd;
             font-weight: bold;
         }
 
-        footer {
+        .footer {
             margin-top: 20px;
             font-size: 11px;
             color: #666;
@@ -74,21 +68,24 @@
 <body>
 <div class="container">
 
-    <header>
-        <div>
-            <div class="shop" th:text="${shopName}">Shop Name</div>
-            <div th:text="${shopAddress}">Address</div>
-            <div th:text="${shopPhone}">Phone</div>
-        </div>
+    <!-- HEADER -->
+    <table class="header-table">
+        <tr>
+            <td>
+                <div class="shop" th:text="${shopName}">Shop Name</div>
+                <div th:text="${shopAddress}">Address</div>
+                <div th:text="${shopPhone}">Phone</div>
+            </td>
+            <td class="right">
+                <div><strong>Invoice</strong></div>
+                <div th:text="${invoiceNumber}">INV-001</div>
+                <div th:text="${date}">2025-01-01</div>
+                <div th:text="${gstNumber}">GSTIN</div>
+            </td>
+        </tr>
+    </table>
 
-        <div class="meta">
-            <div><strong>Invoice</strong></div>
-            <div th:text="${invoiceNumber}">INV-001</div>
-            <div th:text="${date}">2025-01-01</div>
-            <div th:text="${gstNumber}">GSTIN</div>
-        </div>
-    </header>
-
+    <!-- CUSTOMER -->
     <div>
         <strong>Bill To:</strong><br/>
         <span th:text="${customer.name}">Customer</span><br/>
@@ -96,6 +93,7 @@
         <span th:text="${customer.address}">Address</span>
     </div>
 
+    <!-- ITEMS -->
     <table>
         <thead>
         <tr>
@@ -108,7 +106,7 @@
 
         <tbody>
         <tr th:each="item : ${items}">
-            <td th:text="${item.productName}">Product</td>
+            <td th:text="${item.itemName}">Product</td>
             <td th:text="${item.quantity}">1</td>
             <td th:text="${item.unitPrice}">100</td>
             <td class="right" th:text="${item.lineTotal}">100</td>
@@ -153,11 +151,12 @@
         </tfoot>
     </table>
 
-    <footer>
+    <!-- FOOTER -->
+    <div class="footer">
         Payment Mode: <span th:text="${paymentMode}"></span><br/>
         Notes: <span th:text="${notes}"></span><br/><br/>
         This is a computer generated invoice.
-    </footer>
+    </div>
 
 </div>
 </body>
