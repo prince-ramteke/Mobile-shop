@@ -3,6 +3,10 @@ import { ConfigProvider, theme } from 'antd';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 
+
+import CustomerLedger from "./pages/customers/CustomerLedger";
+
+
 // Layout
 import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -75,6 +79,8 @@ const AppContent = () => {
 
             {/* Customers */}
             <Route path="customers" element={<CustomerList />} />
+            <Route path="/customers/:id/ledger" element={<CustomerLedger />} />
+
 
             {/* Sales */}
             <Route path="sales" element={<SaleList />} />
