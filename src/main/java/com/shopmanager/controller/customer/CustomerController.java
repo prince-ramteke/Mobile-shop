@@ -136,5 +136,58 @@ public class CustomerController {
         return ResponseEntity.ok(res);
     }
 
+    // ================= CUSTOMER DASHBOARD =================
+    @GetMapping("/{id}/dashboard")
+    public ResponseEntity<?> getCustomerDashboard(@PathVariable Long id) {
+
+        Customer customer = customerService.getEntityById(id);
+
+        BigDecimal totalSales = saleRepository.sumTotalByCustomerId(id);
+        BigDecimal totalRepairs = repairJobRepository.sumTotalByCustomerId(id);
+
+        if (totalSales == null) totalSales = BigDecimal.ZERO;
+        if (totalRepairs == null) totalRepairs = BigDecimal.ZERO;
+
+        BigDecimal totalBusiness = totalSales.add(totalRepairs);
+
+        BigDecimal salePending = saleRepository.sumPendingByCustomerId(id);
+        BigDecimal repairPending = repairJobRepository.sumPendingByCustomerId(id);
+
+        if (salePending == null) salePending = BigDecimal.ZERO;
+        if (repairPending == null) repairPending = BigDecimal.ZERO;
+
+        BigDecimal totalPending = salePending.add(repairPending);
+        BigDecimal totalPaid = totalBusiness.subtract(totalPending);
+
+        Long salesCount = saleRepository.countByCustomerId(id);
+        Long repairsCount = repairJobRepository.countByCustomerId(id);
+
+        Object lastSaleDate = saleRepository.findLastSaleDate(id);
+        Object lastRepairDate = repairJobRepository.findLastRepairDate(id);
+
+        Object lastVisit = (lastRepairDate != null) ? lastRepairDate : lastSaleDate;
+
+        Map<String, Object> res = new HashMap<>();
+
+        Map<String, Object> customerMap = new HashMap<>();
+        customerMap.put("id", customer.getId());
+        customerMap.put("name", customer.getName());
+        customerMap.put("phone", customer.getPhone());
+        customerMap.put("email", customer.getEmail());
+        customerMap.put("address", customer.getAddress());
+
+        res.put("customer", customerMap);
+        res.put("totalSalesAmount", totalSales);
+        res.put("totalRepairsAmount", totalRepairs);
+        res.put("totalBusiness", totalBusiness);
+        res.put("totalPaid", totalPaid);
+        res.put("totalPending", totalPending);
+        res.put("salesCount", salesCount);
+        res.put("repairsCount", repairsCount);
+        res.put("lastVisitDate", lastVisit);
+
+        return ResponseEntity.ok(res);
+    }
+
 
 }

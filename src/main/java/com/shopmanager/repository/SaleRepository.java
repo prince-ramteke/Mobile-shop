@@ -142,4 +142,16 @@ ORDER BY s.saleDate ASC, s.id ASC
 """)
     List<Sale> findLedgerSales(@Param("customerId") Long customerId);
 
+
+    // ================= CUSTOMER DASHBOARD =================
+
+    Long countByCustomerId(Long customerId);
+
+    @Query("""
+SELECT MAX(s.saleDate)
+FROM Sale s
+WHERE s.customer.id = :customerId
+""")
+    LocalDate findLastSaleDate(@Param("customerId") Long customerId);
+
 }

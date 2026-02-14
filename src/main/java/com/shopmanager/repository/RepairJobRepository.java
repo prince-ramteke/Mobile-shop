@@ -86,5 +86,16 @@ ORDER BY r.createdAt ASC, r.id ASC
 """)
     List<RepairJob> findLedgerRepairs(@Param("customerId") Long customerId);
 
+    // ================= CUSTOMER DASHBOARD =================
+
+    Long countByCustomerId(Long customerId);
+
+    @Query("""
+SELECT MAX(r.createdAt)
+FROM RepairJob r
+WHERE r.customer.id = :customerId
+""")
+    java.time.LocalDateTime findLastRepairDate(@Param("customerId") Long customerId);
+
 
 }
