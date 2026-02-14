@@ -86,7 +86,7 @@ ORDER BY r.createdAt ASC, r.id ASC
 """)
     List<RepairJob> findLedgerRepairs(@Param("customerId") Long customerId);
 
-    // ================= CUSTOMER DASHBOARD =================
+    // ================= CUSTOMER STATS =================
 
     Long countByCustomerId(Long customerId);
 

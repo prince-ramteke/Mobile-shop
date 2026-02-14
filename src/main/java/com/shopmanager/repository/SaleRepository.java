@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface SaleRepository extends JpaRepository<Sale, Long> {
 
@@ -153,5 +154,8 @@ FROM Sale s
 WHERE s.customer.id = :customerId
 """)
     LocalDate findLastSaleDate(@Param("customerId") Long customerId);
+
+
+    Optional<Sale> findByInvoiceNumber(String invoiceNumber);
 
 }

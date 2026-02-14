@@ -21,6 +21,14 @@ public class CustomerLedgerServiceImpl implements CustomerLedgerService {
     private final RepairJobRepository repairJobRepository;
 
     @Override
+    public List<?> getSalePayments(String invoiceNumber) {
+        Sale sale = saleRepository.findByInvoiceNumber(invoiceNumber)
+                .orElseThrow();
+        return sale.getPayments();
+    }
+
+
+    @Override
     public List<CustomerLedgerEntry> getLedger(Long customerId) {
 
         List<CustomerLedgerEntry> ledger = new ArrayList<>();
@@ -29,13 +37,18 @@ public class CustomerLedgerServiceImpl implements CustomerLedgerService {
         List<RepairJob> repairs = repairJobRepository.findLedgerRepairs(customerId);
 
         for (Sale s : sales) {
+            BigDecimal paid = s.getGrandTotal().subtract(
+                    s.getPendingAmount() == null ? BigDecimal.ZERO : s.getPendingAmount()
+            );
+
             ledger.add(CustomerLedgerEntry.builder()
-                    .date(s.getSaleDate().atStartOfDay())
+                    .date(s.getCreatedAt())
                     .type("SALE")
                     .reference(s.getInvoiceNumber())
                     .debit(s.getGrandTotal())
-                    .credit(BigDecimal.ZERO)
+                    .credit(paid)
                     .build());
+
         }
 
         for (RepairJob r : repairs) {
@@ -46,17 +59,17 @@ public class CustomerLedgerServiceImpl implements CustomerLedgerService {
                     .type("REPAIR")
                     .reference(r.getJobNumber())
                     .debit(cost == null ? BigDecimal.ZERO : cost)
-                    .credit(r.getAdvancePaid())
+                    .credit(r.getAdvancePaid() == null ? BigDecimal.ZERO : r.getAdvancePaid())
                     .build());
         }
 
         ledger.sort(Comparator.comparing(CustomerLedgerEntry::getDate));
 
-        BigDecimal running = BigDecimal.ZERO;
         for (CustomerLedgerEntry e : ledger) {
-            running = running.add(e.getDebit()).subtract(e.getCredit());
-            e.setBalance(running);
+            BigDecimal pending = e.getDebit().subtract(e.getCredit());
+            e.setBalance(pending);
         }
+
 
         return ledger;
     }

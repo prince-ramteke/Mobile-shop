@@ -11,6 +11,7 @@ import java.util.Map;
 import com.shopmanager.dto.customer.CustomerRequest;
 import com.shopmanager.dto.customer.CustomerResponse;
 import com.shopmanager.service.CustomerLedgerService;
+import com.shopmanager.service.CustomerReminderService;
 import com.shopmanager.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,6 +22,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/customers")
 @RequiredArgsConstructor
 public class CustomerController {
+
+    private final CustomerReminderService customerReminderService;
 
     private final CustomerLedgerService customerLedgerService;
 
@@ -187,6 +190,12 @@ public class CustomerController {
         res.put("lastVisitDate", lastVisit);
 
         return ResponseEntity.ok(res);
+    }
+
+    // ================= PAYMENT REMINDERS =================
+    @GetMapping("/reminders")
+    public ResponseEntity<?> getPaymentReminders() {
+        return ResponseEntity.ok(customerReminderService.getPendingReminders());
     }
 
 
