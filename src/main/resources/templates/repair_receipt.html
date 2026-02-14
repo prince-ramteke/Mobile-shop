@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <title>Repair Receipt</title>
+
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; color: #222; }
+        .container { width: 100%; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 6px; }
+        .label { width: 35%; color: #666; }
+        .value { width: 65%; }
+        .header { border-bottom: 1px solid #ddd; margin-bottom: 10px; padding-bottom: 5px; }
+        .title { font-size: 16px; font-weight: bold; }
+        .footer { margin-top: 15px; font-size: 11px; border-top: 1px dashed #ccc; padding-top: 5px; }
+    </style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="header">
+        <div class="title" th:text="${shopName}">Saurabh Mobile Shop</div>
+        <div th:text="${shopPhone}">Phone</div>
+    </div>
+
+    <table>
+        <tr>
+            <td class="label">Job Number</td>
+            <td class="value" th:text="${invoiceNumber}">JOB-0001</td>
+        </tr>
+        <tr>
+            <td class="label">Date</td>
+            <td class="value" th:text="${date}">01-01-2026</td>
+        </tr>
+        <tr>
+            <td class="label">Customer</td>
+            <td class="value" th:text="${customer.name}">Name</td>
+        </tr>
+        <tr>
+            <td class="label">Phone</td>
+            <td class="value" th:text="${customer.phone}">Phone</td>
+        </tr>
+        <tr>
+            <td class="label">Device</td>
+            <td class="value"
+                th:text="${deviceBrand + ' ' + deviceModel}">Device</td>
+
+        </tr>
+        <tr>
+            <td class="label">Issue</td>
+            <td class="value" th:text="${notes}">Issue</td>
+        </tr>
+        <tr>
+            <td class="label">Total Cost</td>
+            <td class="value" th:text="${grandTotal}">0</td>
+        </tr>
+        <tr>
+            <td class="label">Advance Paid</td>
+            <td class="value" th:text="${amountReceived}">0</td>
+        </tr>
+        <tr>
+            <td class="label">Pending</td>
+            <td class="value" th:text="${pendingAmount}">0</td>
+        </tr>
+    </table>
+
+
+    <!-- ================= PAYMENT HISTORY ================= -->
+    <div style="margin-top:12px;">
+        <strong>Payment History</strong>
+
+        <table style="width:100%; border-collapse:collapse; margin-top:6px;">
+            <tr style="border-bottom:1px solid #ddd;">
+                <th align="left">Date</th>
+                <th align="right">Paid</th>
+                <th align="right">Balance</th>
+                <th align="left">Note</th>
+            </tr>
+
+            <tr th:each="p : ${payments}">
+                <td th:text="${p.paidAt != null ? #temporals.format(p.paidAt, 'dd-MM-yyyy HH:mm') : '-'}">date</td>
+                <td align="right" th:text="${p.amount}">0</td>
+                <td align="right" th:text="${p.balance}">0</td>
+                <td th:text="${p.note}">note</td>
+            </tr>
+
+            <tr th:if="${payments == null || payments.isEmpty()}">
+                <td colspan="4">No payments yet</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- =================================================== -->
+
+
+    <div class="footer">
+        This is computer generated receipt.
+    </div>
+
+
+</div>
+</body>
+</html>

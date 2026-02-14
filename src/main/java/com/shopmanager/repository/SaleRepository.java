@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 public interface SaleRepository extends JpaRepository<Sale, Long> {
 
@@ -113,4 +114,48 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 
     // For dashboard pending counts
     Long countByPendingAmountGreaterThan(BigDecimal amount);
+
+    // ================= CUSTOMER DUE =================
+@Query("""
+    SELECT COALESCE(SUM(s.pendingAmount),0)
+    FROM Sale s
+    WHERE s.customer.id = :customerId
+""")
+BigDecimal sumPendingByCustomerId(@Param("customerId") Long customerId);
+
+    // ================= CUSTOMER TOTAL BUSINESS =================
+    @Query("""
+    SELECT COALESCE(SUM(s.grandTotal),0)
+    FROM Sale s
+    WHERE s.customer.id = :customerId
+""")
+    BigDecimal sumTotalByCustomerId(@Param("customerId") Long customerId);
+
+
+    // ================= CUSTOMER SALES LIST =================
+    List<Sale> findByCustomerIdOrderBySaleDateDesc(Long customerId);
+
+
+    @Query("""
+SELECT s FROM Sale s
+WHERE s.customer.id = :customerId
+ORDER BY s.saleDate ASC, s.id ASC
+""")
+    List<Sale> findLedgerSales(@Param("customerId") Long customerId);
+
+
+    // ================= CUSTOMER DASHBOARD =================
+
+    Long countByCustomerId(Long customerId);
+
+    @Query("""
+SELECT MAX(s.saleDate)
+FROM Sale s
+WHERE s.customer.id = :customerId
+""")
+    LocalDate findLastSaleDate(@Param("customerId") Long customerId);
+
+
+    Optional<Sale> findByInvoiceNumber(String invoiceNumber);
+
 }

@@ -1,5 +1,6 @@
 package com.shopmanager.controller.repair;
 
+import com.shopmanager.entity.RepairPayment;
 import com.shopmanager.dto.repair.RepairJobRequest;
 import com.shopmanager.dto.repair.RepairJobResponse;
 import com.shopmanager.entity.Customer;
@@ -9,7 +10,9 @@ import com.shopmanager.exception.ResourceNotFoundException;
 import com.shopmanager.mapper.RepairJobMapper;
 import com.shopmanager.repository.CustomerRepository;
 import com.shopmanager.repository.RepairJobRepository;
+import com.shopmanager.repository.RepairPaymentRepository;
 import com.shopmanager.service.InvoiceNumberService;
+import com.shopmanager.service.RepairInvoiceService;
 import com.shopmanager.service.RepairJobService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RepairController {
 
+    private final RepairInvoiceService repairInvoiceService;
+
+    private final RepairPaymentRepository repairPaymentRepository;
     private final RepairJobService repairJobService;
     private final RepairJobRepository repairJobRepository;
     private final CustomerRepository customerRepository;
@@ -65,6 +71,7 @@ public class RepairController {
     }
 
 
+    @Transactional
     @PutMapping("/{id}/receive-payment")
     public ResponseEntity<?> receivePayment(
             @PathVariable Long id,
@@ -104,8 +111,17 @@ public class RepairController {
             // Update advance
             job.setAdvancePaid(advance.add(amount));
 
-            // Recalculate pending
+            // ⭐ SAVE PAYMENT IN LEDGER
+            RepairPayment payment = new RepairPayment();
+            payment.setRepairJob(job);
+            payment.setAmount(amount);
+            payment.setPaidAt(java.time.LocalDateTime.now());
+            payment.setNote("Payment received");
+
+            repairPaymentRepository.save(payment);
+
             job.setPendingAmount(finalCost.subtract(job.getAdvancePaid()));
+
 
             // Auto mark delivered if fully paid
             if (job.getPendingAmount().compareTo(BigDecimal.ZERO) == 0) {
@@ -259,6 +275,52 @@ public class RepairController {
             error.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(error);
         }
+    }
+
+    @GetMapping("/{id}/invoice")
+    public ResponseEntity<byte[]> downloadInvoice(@PathVariable Long id) {
+
+        RepairJob job = repairJobRepository.findByIdWithCustomer(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Repair job not found"));
+
+        byte[] pdf = repairInvoiceService.generateRepairInvoicePdf(job);
+
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=repair-" + job.getJobNumber() + ".pdf")
+                .header("Content-Type", "application/pdf")
+                .body(pdf);
+    }
+
+
+
+    // ================= PAYMENT HISTORY / LEDGER =================
+    @GetMapping("/{id}/payments")
+    public ResponseEntity<List<Map<String, Object>>> getPayments(@PathVariable Long id) {
+
+        // Check job exists
+        RepairJob job = repairJobRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Repair job not found"));
+
+        List<RepairPayment> payments =
+                repairPaymentRepository.findByRepairJobIdOrderByPaidAtAsc(id);
+
+        List<Map<String, Object>> list = new java.util.ArrayList<>();
+
+        for (RepairPayment p : payments) {
+            if (p == null) continue;
+
+            Map<String, Object> row = new HashMap<>();
+            row.put("id", p.getId());
+            row.put("amount", p.getAmount());
+            row.put("note", p.getNote());
+
+            // NULL SAFE DATE (prevents 500 crash)
+            row.put("paidAt", p.getPaidAt() == null ? null : p.getPaidAt());
+
+            list.add(row);
+        }
+
+        return ResponseEntity.ok(list);
     }
 
 
