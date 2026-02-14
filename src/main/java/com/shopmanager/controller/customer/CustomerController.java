@@ -10,6 +10,7 @@ import java.util.Map;
 
 import com.shopmanager.dto.customer.CustomerRequest;
 import com.shopmanager.dto.customer.CustomerResponse;
+import com.shopmanager.service.CustomerLedgerService;
 import com.shopmanager.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,9 +22,17 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class CustomerController {
 
+    private final CustomerLedgerService customerLedgerService;
+
+
     private final CustomerService customerService;
     private final SaleRepository saleRepository;
     private final RepairJobRepository repairJobRepository;
+
+    @GetMapping("/{id}/ledger")
+    public ResponseEntity<?> getLedger(@PathVariable Long id) {
+        return ResponseEntity.ok(customerLedgerService.getLedger(id));
+    }
 
 
     @PostMapping
@@ -80,5 +89,52 @@ public class CustomerController {
 
         return ResponseEntity.ok(res);
     }
+
+    // ================= CUSTOMER FULL PROFILE =================
+    @GetMapping("/{id}/profile")
+    public ResponseEntity<?> getCustomerProfile(@PathVariable Long id) {
+
+        Customer customer = customerService.getEntityById(id);
+
+        BigDecimal salePending = saleRepository.sumPendingByCustomerId(id);
+        BigDecimal repairPending = repairJobRepository.sumPendingByCustomerId(id);
+
+        if (salePending == null) salePending = BigDecimal.ZERO;
+        if (repairPending == null) repairPending = BigDecimal.ZERO;
+
+        BigDecimal totalPending = salePending.add(repairPending);
+
+        BigDecimal totalSales = saleRepository.sumTotalByCustomerId(id);
+        BigDecimal totalRepairs = repairJobRepository.sumTotalByCustomerId(id);
+
+        if (totalSales == null) totalSales = BigDecimal.ZERO;
+        if (totalRepairs == null) totalRepairs = BigDecimal.ZERO;
+
+        BigDecimal totalBusiness = totalSales.add(totalRepairs);
+        BigDecimal totalPaid = totalBusiness.subtract(totalPending);
+
+        Map<String, Object> res = new HashMap<>();
+
+        Map<String, Object> customerMap = new HashMap<>();
+        customerMap.put("id", customer.getId());
+        customerMap.put("name", customer.getName());
+        customerMap.put("phone", customer.getPhone());
+        customerMap.put("email", customer.getEmail());
+        customerMap.put("address", customer.getAddress());
+
+        res.put("customer", customerMap);
+
+        res.put("totalBusiness", totalBusiness);
+        res.put("totalPaid", totalPaid);
+        res.put("totalPending", totalPending);
+        res.put("salePending", salePending);
+        res.put("repairPending", repairPending);
+
+        res.put("sales", saleRepository.findByCustomerIdOrderBySaleDateDesc(id));
+        res.put("repairs", repairJobRepository.findByCustomerIdOrderByCreatedAtDesc(id));
+
+        return ResponseEntity.ok(res);
+    }
+
 
 }

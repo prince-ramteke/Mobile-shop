@@ -122,5 +122,24 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 """)
 BigDecimal sumPendingByCustomerId(@Param("customerId") Long customerId);
 
+    // ================= CUSTOMER TOTAL BUSINESS =================
+    @Query("""
+    SELECT COALESCE(SUM(s.grandTotal),0)
+    FROM Sale s
+    WHERE s.customer.id = :customerId
+""")
+    BigDecimal sumTotalByCustomerId(@Param("customerId") Long customerId);
+
+
+    // ================= CUSTOMER SALES LIST =================
+    List<Sale> findByCustomerIdOrderBySaleDateDesc(Long customerId);
+
+
+    @Query("""
+SELECT s FROM Sale s
+WHERE s.customer.id = :customerId
+ORDER BY s.saleDate ASC, s.id ASC
+""")
+    List<Sale> findLedgerSales(@Param("customerId") Long customerId);
 
 }

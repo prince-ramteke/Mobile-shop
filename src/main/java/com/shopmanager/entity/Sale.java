@@ -30,7 +30,10 @@ public class Sale {
     private String invoiceNumber;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore   // ⭐ ADD THIS
     private Customer customer;
+
 
     private LocalDate saleDate;
 
@@ -81,10 +84,11 @@ public class Sale {
 
     /* -------- RELATIONS -------- */
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
+    @com.fasterxml.jackson.annotation.JsonIgnore   // ⭐ ADD
     private List<SaleItem> items = new ArrayList<>();
 
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
+    @com.fasterxml.jackson.annotation.JsonIgnore   // ⭐ ADD
     private List<Payment> payments = new ArrayList<>();
+
 }

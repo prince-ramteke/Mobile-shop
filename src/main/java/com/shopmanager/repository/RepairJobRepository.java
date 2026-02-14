@@ -66,5 +66,25 @@ WHERE r.customer.id = :customerId
 """)
     BigDecimal sumPendingByCustomerId(@Param("customerId") Long customerId);
 
+    // ================= CUSTOMER TOTAL REPAIR BUSINESS =================
+    @Query("""
+    SELECT COALESCE(SUM(r.finalCost),0)
+    FROM RepairJob r
+    WHERE r.customer.id = :customerId
+""")
+    BigDecimal sumTotalByCustomerId(@Param("customerId") Long customerId);
+
+
+
+    // ================= CUSTOMER REPAIR LIST =================
+    List<RepairJob> findByCustomerIdOrderByCreatedAtDesc(Long customerId);
+
+    @Query("""
+SELECT r FROM RepairJob r
+WHERE r.customer.id = :customerId
+ORDER BY r.createdAt ASC, r.id ASC
+""")
+    List<RepairJob> findLedgerRepairs(@Param("customerId") Long customerId);
+
 
 }
