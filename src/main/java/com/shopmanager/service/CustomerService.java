@@ -2,6 +2,7 @@ package com.shopmanager.service;
 
 import com.shopmanager.dto.customer.CustomerRequest;
 import com.shopmanager.dto.customer.CustomerResponse;
+import com.shopmanager.entity.Customer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -16,4 +17,7 @@ public interface CustomerService {
     Page<CustomerResponse> search(String query, int page, int size);
 
     void deleteCustomer(Long id);
+
+    Customer getEntityById(Long id);
+
 }

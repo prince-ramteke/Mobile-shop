@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -56,6 +57,14 @@ ORDER BY r.id DESC
 
     @Query("SELECT r FROM RepairJob r LEFT JOIN FETCH r.customer WHERE r.id = :id")
     Optional<RepairJob> findByIdWithCustomer(@Param("id") Long id);
+
+    // ================= CUSTOMER DUE =================
+    @Query("""
+SELECT COALESCE(SUM(r.pendingAmount),0)
+FROM RepairJob r
+WHERE r.customer.id = :customerId
+""")
+    BigDecimal sumPendingByCustomerId(@Param("customerId") Long customerId);
 
 
 }

@@ -1,5 +1,8 @@
 package com.shopmanager.service.impl;
 
+import com.shopmanager.entity.Customer;
+import com.shopmanager.exception.ResourceNotFoundException;
+
 import com.shopmanager.dto.customer.CustomerRequest;
 import com.shopmanager.dto.customer.CustomerResponse;
 import com.shopmanager.entity.Customer;
@@ -7,6 +10,8 @@ import com.shopmanager.exception.DuplicateEntryException;
 import com.shopmanager.exception.ResourceNotFoundException;
 import com.shopmanager.mapper.CustomerMapper;
 import com.shopmanager.repository.CustomerRepository;
+import com.shopmanager.repository.RepairJobRepository;
+import com.shopmanager.repository.SaleRepository;
 import com.shopmanager.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -15,10 +20,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class CustomerServiceImpl implements CustomerService {
+
+    private final SaleRepository saleRepository;
+    private final RepairJobRepository repairJobRepository;
 
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
@@ -31,7 +41,16 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         Customer customer = customerMapper.toEntity(request);
-        return customerMapper.toResponse(customerRepository.save(customer));
+        Customer saved = customerRepository.save(customer);
+
+        CustomerResponse res = customerMapper.toResponse(saved);
+
+// ---- ADD THIS ----
+        res.setDueAmount(BigDecimal.ZERO);
+// ------------------
+
+        return res;
+
     }
 
     @Override
@@ -53,15 +72,41 @@ public class CustomerServiceImpl implements CustomerService {
         customer.setEmail(request.getEmail());
         customer.setAddress(request.getAddress());
 
-        return customerMapper.toResponse(customerRepository.save(customer));
+        Customer saved = customerRepository.save(customer);
+        CustomerResponse res = customerMapper.toResponse(saved);
+
+// ---- ADD THIS ----
+        BigDecimal saleDue = saleRepository.sumPendingByCustomerId(saved.getId());
+        BigDecimal repairDue = repairJobRepository.sumPendingByCustomerId(saved.getId());
+
+        if (saleDue == null) saleDue = BigDecimal.ZERO;
+        if (repairDue == null) repairDue = BigDecimal.ZERO;
+
+        res.setDueAmount(saleDue.add(repairDue));
+// ------------------
+
+        return res;
+
     }
 
     @Override
     public CustomerResponse getCustomerById(Long id) {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
-        return customerMapper.toResponse(customer);
+
+        CustomerResponse res = customerMapper.toResponse(customer);
+
+        BigDecimal saleDue = saleRepository.sumPendingByCustomerId(customer.getId());
+        BigDecimal repairDue = repairJobRepository.sumPendingByCustomerId(customer.getId());
+
+        if (saleDue == null) saleDue = BigDecimal.ZERO;
+        if (repairDue == null) repairDue = BigDecimal.ZERO;
+
+        res.setDueAmount(saleDue.add(repairDue));
+
+        return res;
     }
+
 
 
     @Override
@@ -70,11 +115,37 @@ public class CustomerServiceImpl implements CustomerService {
 
         if (query == null || query.trim().isEmpty()) {
             return customerRepository.findAllOrderByCreatedAtDesc(pageable)
-                    .map(customerMapper::toResponse);
+                    .map(customer -> {
+                        CustomerResponse res = customerMapper.toResponse(customer);
+
+                        BigDecimal saleDue = saleRepository.sumPendingByCustomerId(customer.getId());
+                        BigDecimal repairDue = repairJobRepository.sumPendingByCustomerId(customer.getId());
+
+                        if (saleDue == null) saleDue = BigDecimal.ZERO;
+                        if (repairDue == null) repairDue = BigDecimal.ZERO;
+
+                        res.setDueAmount(saleDue.add(repairDue));
+
+                        return res;
+                    });
+
         }
 
         Page<Customer> customers = customerRepository.searchCustomers(query, pageable);
-        return customers.map(customerMapper::toResponse);
+        return customers.map(customer -> {
+            CustomerResponse res = customerMapper.toResponse(customer);
+
+            BigDecimal saleDue = saleRepository.sumPendingByCustomerId(customer.getId());
+            BigDecimal repairDue = repairJobRepository.sumPendingByCustomerId(customer.getId());
+
+            if (saleDue == null) saleDue = BigDecimal.ZERO;
+            if (repairDue == null) repairDue = BigDecimal.ZERO;
+
+            res.setDueAmount(saleDue.add(repairDue));
+
+            return res;
+        });
+
     }
 
 
@@ -84,4 +155,11 @@ public class CustomerServiceImpl implements CustomerService {
             throw new ResourceNotFoundException("Customer not found");
         customerRepository.deleteById(id);
     }
+
+    @Override
+    public Customer getEntityById(Long id) {
+        return customerRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+    }
+
 }

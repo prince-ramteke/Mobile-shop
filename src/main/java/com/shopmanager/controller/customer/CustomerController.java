@@ -1,5 +1,13 @@
 package com.shopmanager.controller.customer;
 
+import com.shopmanager.repository.SaleRepository;
+import com.shopmanager.repository.RepairJobRepository;
+import com.shopmanager.entity.Customer;
+import com.shopmanager.exception.ResourceNotFoundException;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
+
 import com.shopmanager.dto.customer.CustomerRequest;
 import com.shopmanager.dto.customer.CustomerResponse;
 import com.shopmanager.service.CustomerService;
@@ -14,6 +22,9 @@ import org.springframework.web.bind.annotation.*;
 public class CustomerController {
 
     private final CustomerService customerService;
+    private final SaleRepository saleRepository;
+    private final RepairJobRepository repairJobRepository;
+
 
     @PostMapping
     public ResponseEntity<CustomerResponse> create(@RequestBody CustomerRequest request) {
@@ -47,4 +58,27 @@ public class CustomerController {
         customerService.deleteCustomer(id);
         return ResponseEntity.ok().build();
     }
+
+    // ================= CUSTOMER FINANCIAL SUMMARY =================
+    @GetMapping("/{id}/summary")
+    public ResponseEntity<?> getCustomerSummary(@PathVariable Long id) {
+
+        Customer customer = customerService.getEntityById(id);
+
+        BigDecimal salePending = saleRepository.sumPendingByCustomerId(id);
+        BigDecimal repairPending = repairJobRepository.sumPendingByCustomerId(id);
+
+        if (salePending == null) salePending = BigDecimal.ZERO;
+        if (repairPending == null) repairPending = BigDecimal.ZERO;
+
+        BigDecimal totalDue = salePending.add(repairPending);
+
+        Map<String, Object> res = new HashMap<>();
+        res.put("salePending", salePending);
+        res.put("repairPending", repairPending);
+        res.put("totalDue", totalDue);
+
+        return ResponseEntity.ok(res);
+    }
+
 }

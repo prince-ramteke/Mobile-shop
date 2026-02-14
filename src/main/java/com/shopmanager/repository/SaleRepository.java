@@ -113,4 +113,14 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 
     // For dashboard pending counts
     Long countByPendingAmountGreaterThan(BigDecimal amount);
+
+    // ================= CUSTOMER DUE =================
+@Query("""
+    SELECT COALESCE(SUM(s.pendingAmount),0)
+    FROM Sale s
+    WHERE s.customer.id = :customerId
+""")
+BigDecimal sumPendingByCustomerId(@Param("customerId") Long customerId);
+
+
 }
