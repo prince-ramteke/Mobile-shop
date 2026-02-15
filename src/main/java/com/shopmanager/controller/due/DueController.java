@@ -5,6 +5,8 @@ import com.shopmanager.dto.due.DueSummaryResponse;
 import com.shopmanager.dto.due.MarkPaidRequest;
 import com.shopmanager.service.DueService;
 import com.shopmanager.service.DueServiceExtended;
+
+import com.shopmanager.service.WhatsAppService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +16,8 @@ import java.util.List;
 @RequestMapping("/api/dues")
 @RequiredArgsConstructor
 public class DueController {
+
+    private final WhatsAppService whatsAppService;
 
     private final DueServiceExtended dueServiceExtended;
     private final DueService dueService;
@@ -50,8 +54,9 @@ public class DueController {
         return dueServiceExtended.markAsPaid(dueId, req);
     }
     @PostMapping("/{customerId}/send-whatsapp")
-    public String sendWhatsAppReminder(@PathVariable Long customerId) {
-        return dueServiceExtended.sendWhatsAppReminder(customerId);
+    public Object sendWhatsAppReminder(@PathVariable Long customerId) {
+        return whatsAppService.sendDueReminder(customerId);
     }
+
 
 }
