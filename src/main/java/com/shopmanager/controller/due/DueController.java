@@ -49,5 +49,9 @@ public class DueController {
     {
         return dueServiceExtended.markAsPaid(dueId, req);
     }
+    @PostMapping("/{customerId}/send-whatsapp")
+    public String sendWhatsAppReminder(@PathVariable Long customerId) {
+        return dueServiceExtended.sendWhatsAppReminder(customerId);
+    }
 
 }

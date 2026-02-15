@@ -27,6 +27,7 @@ public class DueServiceExtendedImpl implements DueServiceExtended {
 
 
 
+
     @Override
     public void createDue(Long customerId, DueReferenceType referenceType, Long referenceId,
                           BigDecimal totalAmount, BigDecimal paidAmount) {
@@ -130,4 +131,30 @@ public class DueServiceExtendedImpl implements DueServiceExtended {
     public void updateDueForRepair(Long repairId) {
         // TODO: Implement
     }
+
+    @Override
+    public String sendWhatsAppReminder(Long customerId) {
+
+        var dueOpt = dueService.findByCustomerId(customerId);
+        if (dueOpt.isEmpty()) {
+            throw new RuntimeException("Customer due not found");
+        }
+
+        var due = dueOpt.get();
+
+        String phone = due.getPhone();
+        String name = due.getName();
+        String amount = due.getTotalPending().toString();
+
+        // 👉 WhatsApp message text
+        String message = "Hello " + name +
+                ", your pending amount is ₹" + amount +
+                ". Please pay soon. Thank you!";
+
+        // 👉 Call WhatsApp API (Replace with real provider later)
+        System.out.println("Sending WhatsApp to " + phone + " : " + message);
+
+        return "WhatsApp reminder sent to " + name;
+    }
+
 }
