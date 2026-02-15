@@ -24,9 +24,11 @@ const reminderService = {
         return response.data;
     },
 
-    sendWhatsAppReminder: async (customerId) => {
-    const response = await axiosClient.post(`/api/dues/${customerId}/send-whatsapp`);
-    return response.data;
+ 
+
+sendWhatsAppReminder: async (customerId) => {
+    const res = await axiosClient.post(`/api/dues/${customerId}/send-whatsapp`);
+    return res.data;
 },
 
 
