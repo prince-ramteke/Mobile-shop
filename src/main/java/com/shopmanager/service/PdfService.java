@@ -5,4 +5,7 @@ public interface PdfService {
     byte[] generateSaleInvoicePdf(Long saleId);
 
     byte[] generateRepairReceiptPdf(Long repairJobId);
+
+    byte[] generateMobileSaleInvoicePdf(Long mobileSaleId);
+
 }

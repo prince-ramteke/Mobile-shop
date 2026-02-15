@@ -1,0 +1,77 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <style>
+    body { font-family: Arial; font-size: 12px; }
+    .title { font-size: 18px; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    td { padding: 6px; border-bottom: 1px solid #eee; }
+    .right { text-align: right; }
+  </style>
+</head>
+
+<body>
+
+<div class="title" th:text="${shopName}">Shop</div>
+<div th:text="${shopAddress}"></div>
+<div th:text="${shopPhone}"></div>
+
+<hr/>
+
+<b>Invoice:</b> <span th:text="${invoiceNumber}"></span><br/>
+<b>Date:</b> <span th:text="${#temporals.format(date, 'dd-MM-yyyy')}"></span>
+<hr/>
+
+<div style="font-weight:bold; font-size:13px; margin-top:6px;">Customer Details</div>
+Name: <span th:text="${customerName}"></span><br/>
+Phone: <span th:text="${customerPhone}"></span><br/>
+Address: <span th:text="${customerAddress}"></span>
+
+
+<hr/>
+
+<div style="font-weight:bold; font-size:13px; margin-top:6px;">Mobile Details</div>
+<table>
+  <tr><td>Company</td><td th:text="${company}"></td></tr>
+  <tr><td>Model</td><td th:text="${model}"></td></tr>
+  <tr><td>IMEI 1</td><td th:text="${imei1}"></td></tr>
+  <tr><td>IMEI 2</td><td th:text="${imei2}"></td></tr>
+  <tr><td>Quantity</td><td th:text="${qty}"></td></tr>
+</table>
+
+
+<hr/>
+
+<div style="font-weight:bold; font-size:13px; margin-top:6px;">Warranty Information</div>
+Years: <span th:text="${warrantyYears}"></span><br/>
+Expiry: <span th:text="${#temporals.format(warrantyExpiry, 'dd-MM-yyyy')}"></span>
+
+<hr/>
+
+<table>
+  <tr><td>Unit Price</td><td class="right">₹ <span th:text="${#numbers.formatDecimal(price, 1, 2)}"></span></td></tr>
+  <tr><td><b>Total Amount</b></td><td class="right">₹ <span th:text="${#numbers.formatDecimal(total, 1, 2)}"></span></td></tr>
+  <tr><td>Advance Paid</td><td class="right">₹ <span th:text="${#numbers.formatDecimal(advance, 1, 2)}"></span></td></tr>
+  <tr><td><b>Balance Due</b></td><td class="right">₹ <span th:text="${#numbers.formatDecimal(pending, 1, 2)}"></span></td></tr>
+</table>
+<hr/>
+Payment Mode: <span th:text="${paymentMode}"></span>
+<hr/>
+
+<b>Terms &amp; Conditions</b><br/>
+• Warranty only for manufacturing defects.<br/>
+• Physical / Water damage not covered.<br/>
+• Invoice required for warranty claim.<br/>
+• No return / no refund after sale.<br/>
+
+<br/><br/>
+
+<table style="width:100%; margin-top:20px;">
+  <tr>
+    <td>Customer Signature</td>
+    <td style="text-align:right;">Authorized Signature</td>
+  </tr>
+</table>
+
+</body>
+</html>

@@ -1,8 +1,10 @@
 package com.shopmanager.service.impl;
 
+import com.shopmanager.entity.MobileSale;
 import com.shopmanager.entity.RepairJob;
 import com.shopmanager.entity.Sale;
 import com.shopmanager.exception.ResourceNotFoundException;
+import com.shopmanager.repository.MobileSaleRepository;
 import com.shopmanager.repository.RepairJobRepository;
 import com.shopmanager.repository.SaleRepository;
 import com.shopmanager.service.PdfService;
@@ -12,16 +14,73 @@ import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.context.Context;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.xhtmlrenderer.pdf.ITextRenderer;
+import com.shopmanager.entity.Customer;
+import com.shopmanager.repository.CustomerRepository;
 
 import java.io.ByteArrayOutputStream;
 
 @Service
 @RequiredArgsConstructor
 public class PdfServiceImpl implements PdfService {
+    private final CustomerRepository customerRepository;
+
+    private final MobileSaleRepository mobileSaleRepository;
 
     private final SaleRepository saleRepository;
     private final RepairJobRepository repairJobRepository;
     private final SpringTemplateEngine templateEngine;
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] generateMobileSaleInvoicePdf(Long id) {
+
+        MobileSale sale = mobileSaleRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Mobile sale not found"));
+
+        Context ctx = new Context();
+
+        // Shop Info
+        ctx.setVariable("shopName", "Saurabh Mobile Shop");
+        ctx.setVariable("shopAddress", "Main Road, City");
+        ctx.setVariable("shopPhone", "+91 9876543210");
+        ctx.setVariable("paymentMode", "CASH");
+
+        // Sale Info
+        ctx.setVariable("invoiceNumber", String.format("MS-%04d", sale.getId()));
+        ctx.setVariable("date", sale.getCreatedAt().toLocalDate());
+
+        ctx.setVariable("company", sale.getCompany());
+        ctx.setVariable("model", sale.getModel());
+        ctx.setVariable("imei1", sale.getImei1());
+        ctx.setVariable("imei2", sale.getImei2());
+        ctx.setVariable("qty", sale.getQuantity());
+
+        ctx.setVariable("price", sale.getPrice());
+        ctx.setVariable("total", sale.getTotalAmount());
+        ctx.setVariable("advance", sale.getAdvancePaid());
+        ctx.setVariable("pending", sale.getPendingAmount());
+
+        ctx.setVariable("warrantyYears", sale.getWarrantyYears());
+        ctx.setVariable("warrantyExpiry", sale.getWarrantyExpiry());
+        // Customer Info
+        Customer customer = customerRepository.findById(sale.getCustomerId())
+                .orElse(null);
+
+        if (customer != null) {
+            ctx.setVariable("customerName", customer.getName());
+            ctx.setVariable("customerPhone", customer.getPhone());
+            ctx.setVariable("customerAddress", customer.getAddress());
+        } else {
+            ctx.setVariable("customerName", "-");
+            ctx.setVariable("customerPhone", "-");
+            ctx.setVariable("customerAddress", "-");
+        }
+
+
+
+        String html = templateEngine.process("mobile-sale-invoice", ctx);
+        return renderPdf(html);
+    }
 
     @Override
     @Transactional(readOnly = true)  // ADD THIS for lazy loading
@@ -65,8 +124,9 @@ public class PdfServiceImpl implements PdfService {
         ctx.setVariable("paymentMode", sale.getPaymentMode());
         ctx.setVariable("notes", sale.getNotes());
 
-        String html = templateEngine.process("pdf/sale_invoice", ctx);
+        String html = templateEngine.process("sale_invoice", ctx);
         return renderPdf(html);
+
     }
 
     @Override
@@ -86,7 +146,8 @@ public class PdfServiceImpl implements PdfService {
         ctx.setVariable("shopName", "Saurabh Mobile Shop");
         ctx.setVariable("shopPhone", "+91 9876543210");
 
-        String html = templateEngine.process("pdf/repair_receipt", ctx);
+        String html = templateEngine.process("repair_receipt", ctx);
+
         return renderPdf(html);
     }
 

@@ -6,6 +6,8 @@ import com.shopmanager.entity.MobileSale;
 import com.shopmanager.repository.CustomerRepository;
 import com.shopmanager.repository.MobileSaleRepository;
 import com.shopmanager.service.MobileSaleService;
+import com.shopmanager.service.PdfService;
+import com.shopmanager.service.WhatsAppService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,8 +19,13 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class MobileSaleServiceImpl implements MobileSaleService {
 
+    private final PdfService pdfService;
+
     private final MobileSaleRepository saleRepository;
     private final CustomerRepository customerRepository;
+
+    private final WhatsAppService whatsAppService;
+
 
     @Override
     public Long createSale(MobileSaleRequest req) {
@@ -37,6 +44,9 @@ public class MobileSaleServiceImpl implements MobileSaleService {
 
         BigDecimal total = req.getPrice().multiply(BigDecimal.valueOf(req.getQuantity()));
         BigDecimal pending = total.subtract(req.getAdvancePaid());
+        if (pending.compareTo(BigDecimal.ZERO) < 0) {
+            pending = BigDecimal.ZERO;
+        }
 
         LocalDate expiry = LocalDate.now().plusYears(req.getWarrantyYears());
 
@@ -56,9 +66,21 @@ public class MobileSaleServiceImpl implements MobileSaleService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        saleRepository.save(sale);
+        MobileSale saved = saleRepository.save(sale);
 
-        return sale.getId();
+// Generate PDF (for later download + WhatsApp)
+        pdfService.generateMobileSaleInvoicePdf(saved.getId());
+
+// 🔔 WhatsApp Hook (Meta integration later)
+        try {
+            whatsAppService.sendInvoice(saved.getId());
+        } catch (Exception e) {
+            System.out.println("WhatsApp hook failed: " + e.getMessage());
+        }
+
+        return saved.getId();
+
+
     }
 
 }

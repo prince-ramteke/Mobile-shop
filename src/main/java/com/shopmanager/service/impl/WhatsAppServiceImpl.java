@@ -11,13 +11,17 @@ import java.util.List;
 @Service
 public class WhatsAppServiceImpl implements WhatsAppService {
 
-    @Override
     public WhatsAppMessageResponse sendInvoice(Long saleId) {
+
+        System.out.println("📲 WhatsApp Invoice Triggered for Sale ID: " + saleId);
+
+        // Later → attach PDF + call Meta API
         return WhatsAppMessageResponse.builder()
                 .success(true)
-                .message("Invoice WhatsApp placeholder")
+                .message("WhatsApp Invoice Triggered (Mock)")
                 .build();
     }
+
 
     @Override
     public WhatsAppMessageResponse sendRepairUpdate(Long repairId) {

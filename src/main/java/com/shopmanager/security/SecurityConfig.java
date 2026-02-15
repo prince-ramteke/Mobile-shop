@@ -61,6 +61,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/repairs/**").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/repairs/**").authenticated()
                         .requestMatchers("/api/customers/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/mobile-sales/**").authenticated()
+                        // Mobile Sales
+                        .requestMatchers(HttpMethod.POST, "/api/mobile-sales/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/mobile-sales/**").authenticated()
+
+
 
 
 
