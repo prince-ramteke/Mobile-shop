@@ -33,6 +33,13 @@ const DueList = () => {
     const [loading, setLoading] = useState(true);
     const [summary, setSummary] = useState(null);
     const [sendingAll, setSendingAll] = useState(false);
+    const [payModalOpen, setPayModalOpen] = useState(false);
+const [selectedCustomer, setSelectedCustomer] = useState(null);
+const [payAmount, setPayAmount] = useState(0);
+const [historyOpen, setHistoryOpen] = useState(false);
+const [paymentHistory, setPaymentHistory] = useState([]);
+
+
 
     useEffect(() => {
         loadDues();
@@ -50,16 +57,24 @@ const DueList = () => {
         } catch (error) {
             console.error('Failed to load dues:', error);
             // Demo data
-            setDues([
-                { id: 1, customerName: 'John Doe', phone: '9876543210', amount: 5000, daysOverdue: 15, lastReminder: '2024-12-10' },
-                { id: 2, customerName: 'Jane Smith', phone: '9876543211', amount: 12500, daysOverdue: 7, lastReminder: null },
-                { id: 3, customerName: 'Mike Johnson', phone: '9876543212', amount: 3200, daysOverdue: 30, lastReminder: '2024-12-05' },
-            ]);
-            setSummary({ totalDue: 20700, customerCount: 3, overdueCount: 3 });
+            setDues([]);
+setSummary(null);
+
         } finally {
             setLoading(false);
         }
     };
+
+    const loadPaymentHistory = async (customerId) => {
+    try {
+        const res = await reminderService.getPaymentHistory(customerId);
+        setPaymentHistory(res || []);
+        setHistoryOpen(true);
+    } catch (e) {
+        message.error("Failed to load payment history");
+    }
+};
+
 
     const handleSendAllReminders = async () => {
         Modal.confirm({
@@ -97,28 +112,36 @@ const DueList = () => {
             key: 'customer',
             render: (_, record) => (
                 <div>
-                    <Text strong>{record.customerName || record.customer?.name}</Text>
+                    <Text
+    strong
+    style={{ cursor: "pointer", color: "#1677ff" }}
+    onClick={() => loadPaymentHistory(record.customerId)}
+>
+    {record.name}
+</Text>
+
+
                     <br />
                     <Text type="secondary" style={{ fontSize: 12 }}>
-                        {record.phone || record.customer?.phone}
+                        {record.phone}
                     </Text>
                 </div>
             ),
         },
         {
             title: 'Pending Amount',
-            dataIndex: 'amount',
+            dataIndex: 'totalPending',
             key: 'amount',
             render: (amount) => (
                 <Text strong style={{ color: '#ef4444', fontSize: 16 }}>
                     ₹{(amount || 0).toLocaleString()}
                 </Text>
             ),
-            sorter: (a, b) => a.amount - b.amount,
+sorter: (a, b) => a.totalPending - b.totalPending,
         },
         {
             title: 'Overdue',
-            dataIndex: 'daysOverdue',
+            dataIndex: 'overdueDays',
             key: 'daysOverdue',
             render: (days) => (
                 <Tag
@@ -137,20 +160,34 @@ const DueList = () => {
             render: (date) => date ? new Date(date).toLocaleDateString() : 'Never',
         },
         {
-            title: 'Actions',
-            key: 'actions',
-            width: 180,
-            render: (_, record) => (
-                <ReminderTrigger
-                    type="due"
-                    targetId={record.id}
-                    customerName={record.customerName || record.customer?.name}
-                    amount={record.amount}
-                    buttonText="Send Reminder"
-                    onSuccess={loadDues}
-                />
-            ),
-        },
+    title: 'Actions',
+    key: 'actions',
+    width: 220,
+    render: (_, record) => (
+        <Space>
+            <ReminderTrigger
+                type="due"
+                targetId={record.customerId}
+                customerName={record.name}
+                amount={record.totalPending}
+                buttonText="Send Reminder"
+                onSuccess={loadDues}
+            />
+
+            <Button
+                type="primary"
+                size="small"
+                onClick={() => {
+                    setSelectedCustomer(record);
+                    setPayModalOpen(true);
+                }}
+            >
+                Mark Paid
+            </Button>
+        </Space>
+    ),
+},
+
     ];
 
     if (loading) {
@@ -197,8 +234,8 @@ const DueList = () => {
                     >
                         <Card>
                             <Statistic
-                                title="Total Pending"
-                                value={summary?.totalDue || 0}
+                                  title="Total Pending"
+                                 value={summary?.totalDue || 0}
                                 prefix="₹"
                                 valueStyle={{ color: '#ef4444' }}
                             />
@@ -213,8 +250,8 @@ const DueList = () => {
                     >
                         <Card>
                             <Statistic
-                                title="Customers with Dues"
-                                value={summary?.customerCount || dues.length}
+                                  title="Customers with Dues"
+                                  value={summary?.customerCount || dues.length}
                                 valueStyle={{ color: '#f59e0b' }}
                             />
                         </Card>
@@ -229,7 +266,7 @@ const DueList = () => {
                         <Card>
                             <Statistic
                                 title="Overdue (>7 days)"
-                                value={summary?.overdueCount || dues.filter(d => d.daysOverdue > 7).length}
+                                value={summary?.overdueCount || dues.filter(d => d.overdueDays > 7).length}
                                 valueStyle={{ color: '#dc2626' }}
                             />
                         </Card>
@@ -248,7 +285,7 @@ const DueList = () => {
                         <Table
                             columns={columns}
                             dataSource={dues}
-                            rowKey="id"
+                            rowKey="customerId"
                             pagination={{
                                 pageSize: 10,
                                 showTotal: (total) => `Total ${total} pending dues`,
@@ -262,6 +299,76 @@ const DueList = () => {
                     )}
                 </Card>
             </motion.div>
+
+            <Modal
+    open={payModalOpen}
+    title={`Mark Payment - ${selectedCustomer?.name || ''}`}
+    onCancel={() => setPayModalOpen(false)}
+    onOk={async () => {
+        if (!payAmount || payAmount <= 0) {
+            message.error("Enter valid amount");
+            return;
+        }
+
+        try {
+           await reminderService.markAsPaid(
+    selectedCustomer.customerId,
+    { amount: payAmount, note: "Manual payment" }
+);
+
+
+            message.success("Payment recorded");
+            await loadDues();   // IMPORTANT await
+            setPayModalOpen(false);
+            setPayAmount(0);
+        
+        } catch (e) {
+            console.error(e);
+            message.error("Payment failed");
+        }
+    }}
+>
+    <input
+        type="number"
+        placeholder="Enter amount"
+        style={{ width: "100%", padding: 8 }}
+        onChange={(e) => setPayAmount(Number(e.target.value))}
+    />
+</Modal>
+<Modal
+    open={historyOpen}
+    title="Payment History"
+    footer={null}
+    onCancel={() => setHistoryOpen(false)}
+>
+    {paymentHistory.length === 0 ? (
+        <Text type="secondary">No payments yet</Text>
+    ) : (
+        <Table
+            size="small"
+            pagination={false}
+            rowKey="id"
+            dataSource={paymentHistory}
+            columns={[
+                {
+                    title: "Date",
+                    dataIndex: "paidAt",
+                    render: (d) => new Date(d).toLocaleString(),
+                },
+                {
+                    title: "Amount",
+                    dataIndex: "amount",
+                    render: (a) => `₹${a}`,
+                },
+                {
+                    title: "Note",
+                    dataIndex: "note",
+                },
+            ]}
+        />
+    )}
+</Modal>
+
         </div>
     );
 };
