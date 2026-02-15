@@ -10,6 +10,7 @@ import com.shopmanager.repository.SaleRepository;
 import com.shopmanager.service.DueService;
 import com.shopmanager.service.PaymentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,15 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final SaleRepository saleRepository;
     private final DueService dueService;
+
+    @Autowired
+    private com.shopmanager.repository.DuePaymentRepository duePaymentRepository;
+
+    @Override
+    public List<com.shopmanager.entity.due.DuePayment> getDuePaymentsByCustomer(Long customerId) {
+        return duePaymentRepository.findByCustomerIdOrderByPaidAtDesc(customerId);
+    }
+
 
     @Override
     @Transactional

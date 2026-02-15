@@ -1,30 +1,23 @@
 package com.shopmanager.service;
 
-import com.shopmanager.entity.enums.DueReferenceType;
-
-import java.math.BigDecimal;
+import com.shopmanager.dto.due.DueCustomerDTO;
 import java.util.List;
-import com.shopmanager.dto.due.DueSummaryResponse;
-import org.springframework.data.domain.PageRequest;
+import java.util.Optional;
 
 public interface DueService {
+    List<DueCustomerDTO> getAllDues();
 
-    // 🔹 EXISTING
-    List<DueSummaryResponse> getAllDues(PageRequest pageRequest);
-    List<DueSummaryResponse> getOverdueDues(int days, PageRequest pageRequest);
+    void createDue(Long customerId,
+                   com.shopmanager.entity.enums.DueReferenceType refType,
+                   Long referenceId,
+                   java.math.BigDecimal totalAmount,
+                   java.math.BigDecimal paidAmount);
 
-    // 🔹 ADD THESE (already implemented in DueServiceImpl)
-    void createDue(
-            Long customerId,
-            DueReferenceType referenceType,
-            Long referenceId,
-            BigDecimal totalAmount,
-            BigDecimal paidAmount
-    );
+    void addPayment(com.shopmanager.entity.enums.DueReferenceType refType,
+                    Long referenceId,
+                    java.math.BigDecimal amount);
 
-    void addPayment(
-            DueReferenceType referenceType,
-            Long referenceId,
-            BigDecimal paymentAmount
-    );
+    Optional<DueCustomerDTO> findByCustomerId(Long customerId);
+    void save(DueCustomerDTO due);
+
 }
