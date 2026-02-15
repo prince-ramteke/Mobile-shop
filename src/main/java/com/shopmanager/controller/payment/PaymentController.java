@@ -29,4 +29,15 @@ public class PaymentController {
     ) {
         return ResponseEntity.ok(paymentService.getPaymentsBySale(saleId));
     }
+
+    // ================= CUSTOMER DUE PAYMENT HISTORY =================
+    @GetMapping("/customer/{customerId}")
+    public ResponseEntity<List<com.shopmanager.entity.due.DuePayment>> getCustomerDuePayments(
+            @PathVariable Long customerId
+    ) {
+        return ResponseEntity.ok(
+                paymentService.getDuePaymentsByCustomer(customerId)
+        );
+    }
+
 }

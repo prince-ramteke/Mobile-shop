@@ -2,8 +2,12 @@ package com.shopmanager.service.impl;
 
 import com.shopmanager.dto.due.DueSummaryResponse;
 import com.shopmanager.dto.due.MarkPaidRequest;
+import com.shopmanager.entity.due.DuePayment;
 import com.shopmanager.entity.enums.DueReferenceType;
+import com.shopmanager.repository.DuePaymentRepository;
+import com.shopmanager.service.DueService;
 import com.shopmanager.service.DueServiceExtended;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -11,10 +15,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class DueServiceExtendedImpl implements DueServiceExtended {
+
+    private final DueService dueService;
+    private final DuePaymentRepository paymentRepository;
+
+
 
     @Override
     public void createDue(Long customerId, DueReferenceType referenceType, Long referenceId,
@@ -41,37 +52,79 @@ public class DueServiceExtendedImpl implements DueServiceExtended {
 
     @Override
     public DueSummaryResponse getDueSummary() {
-        // Return a sample/empty response using builder (valid approach)
+
+        BigDecimal totalPending = BigDecimal.ZERO;
+        long customersWithDue = 0;
+        long overdueCustomers = 0;
+
+        // Fetch all dues from main DueService logic
+        var dues = dueService.getAllDues();
+
+        for (var d : dues) {
+            if (d.getTotalPending() != null) {
+                totalPending = totalPending.add(d.getTotalPending());
+            }
+
+            customersWithDue++;
+
+            if (d.getOverdueDays() > 7) {
+                overdueCustomers++;
+            }
+        }
+
         return DueSummaryResponse.builder()
-                .type("SALE")
-                .referenceId(0L)
-                .referenceNumber("N/A")
-                .customerId(0L)
-                .customerName("No Data")
-                .customerPhone("")
-                .totalAmount(BigDecimal.ZERO)
-                .pendingAmount(BigDecimal.ZERO)
-                .date(LocalDate.now())
-                .overdueDays(0L)
+                .totalPending(totalPending)
+                .customersWithDue(customersWithDue)
+                .overdueCustomers(overdueCustomers)
                 .build();
     }
 
+
     @Override
     public DueSummaryResponse markAsPaid(Long dueId, MarkPaidRequest request) {
-        // TODO: Implement actual logic
+
+        if (request == null || request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new RuntimeException("Invalid payment amount");
+        }
+
+        var due = dueService.findByCustomerId(dueId)
+                .orElseThrow(() -> new RuntimeException("Due not found"));
+
+        BigDecimal payment = request.getAmount();
+
+        // 1️⃣ Save payment entry
+        DuePayment paymentEntry = new DuePayment();
+        paymentEntry.setCustomerId(due.getCustomerId());
+        paymentEntry.setAmount(payment);
+        paymentEntry.setPaidAt(LocalDateTime.now());
+        paymentEntry.setNote("Manual payment");
+
+        paymentRepository.save(paymentEntry);
+
+        // 2️⃣ Reduce pending
+        BigDecimal newPending = due.getTotalPending().subtract(payment);
+
+        if (newPending.compareTo(BigDecimal.ZERO) < 0) {
+            newPending = BigDecimal.ZERO;
+        }
+
+        due.setTotalPending(newPending);
+
+        // 3️⃣ Save updated due
+        dueService.save(due);
+
         return DueSummaryResponse.builder()
-                .type("SALE")
-                .referenceId(dueId)
-                .referenceNumber("PAID")
-                .customerId(0L)
-                .customerName("Updated")
-                .customerPhone("")
-                .totalAmount(request.getAmount() != null ? request.getAmount() : BigDecimal.ZERO)
-                .pendingAmount(BigDecimal.ZERO)
-                .date(LocalDate.now())
-                .overdueDays(0L)
+                .customerId(due.getCustomerId())
+                .customerName(due.getName())
+                .totalPending(due.getTotalPending())
+                .customersWithDue(newPending.compareTo(BigDecimal.ZERO) > 0 ? 1L : 0L)
+                .overdueCustomers(due.getOverdueDays() > 7 ? 1L : 0L)
                 .build();
     }
+
+
+
+
 
     @Override
     public void updateDueForRepair(Long repairId) {

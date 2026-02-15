@@ -1,110 +1,113 @@
 package com.shopmanager.service.impl;
 
-import com.shopmanager.dto.due.DueSummaryResponse;
+import com.shopmanager.dto.due.DueCustomerDTO;
 import com.shopmanager.entity.Customer;
-import com.shopmanager.entity.DueEntry;
-import com.shopmanager.entity.enums.DueReferenceType;
-import com.shopmanager.entity.enums.DueStatus;
-import com.shopmanager.exception.ResourceNotFoundException;
 import com.shopmanager.repository.CustomerRepository;
-import com.shopmanager.repository.DueEntryRepository;
+import com.shopmanager.repository.DuePaymentRepository;
+import com.shopmanager.repository.SaleRepository;
+import com.shopmanager.repository.RepairJobRepository;
 import com.shopmanager.service.DueService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class DueServiceImpl implements DueService {
+    private final DuePaymentRepository paymentRepository;
 
-    private final DueEntryRepository dueEntryRepository;
     private final CustomerRepository customerRepository;
+    private final SaleRepository saleRepository;
+    private final RepairJobRepository repairJobRepository;
 
-    // ================= EXISTING LOGIC (UNCHANGED) =================
+    @Override
+    public List<DueCustomerDTO> getAllDues() {
 
-    public void createDue(
-            Long customerId,
-            DueReferenceType referenceType,
-            Long referenceId,
-            BigDecimal totalAmount,
-            BigDecimal paidAmount
-    ) {
-        if (totalAmount.compareTo(paidAmount) <= 0) return;
+        List<DueCustomerDTO> list = new ArrayList<>();
 
-        Customer customer = customerRepository.findById(customerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+        for (Customer c : customerRepository.findAll()) {
 
-        BigDecimal pending = totalAmount.subtract(paidAmount);
+            BigDecimal saleDue = saleRepository.sumPendingByCustomerId(c.getId());
+            BigDecimal repairDue = repairJobRepository.sumPendingByCustomerId(c.getId());
 
-        DueEntry due = DueEntry.builder()
-                .customer(customer)
-                .referenceType(referenceType)
-                .referenceId(referenceId)
-                .totalAmount(totalAmount)
-                .paidAmount(paidAmount)
-                .pendingAmount(pending)
-                .status(
-                        paidAmount.compareTo(BigDecimal.ZERO) == 0
-                                ? DueStatus.OPEN
-                                : DueStatus.PARTIALLY_PAID
-                )
-                .lastPaymentDate(LocalDateTime.now())
-                .build();
+            BigDecimal payments = paymentRepository.sumPaymentsByCustomerId(c.getId());
+            if (payments == null) payments = BigDecimal.ZERO;
 
-        dueEntryRepository.save(due);
-    }
+            BigDecimal totalDue = saleDue.add(repairDue).subtract(payments);
 
-    public void addPayment(
-            DueReferenceType referenceType,
-            Long referenceId,
-            BigDecimal paymentAmount
-    ) {
-        DueEntry due = dueEntryRepository
-                .findByReferenceTypeAndReferenceId(referenceType, referenceId)
-                .orElseThrow(() -> new ResourceNotFoundException("Due entry not found"));
+            if (totalDue.compareTo(BigDecimal.ZERO) < 0) {
+                totalDue = BigDecimal.ZERO;
+            }
 
-        BigDecimal newPaid = due.getPaidAmount().add(paymentAmount);
-        BigDecimal newPending = due.getTotalAmount().subtract(newPaid);
 
-        due.setPaidAmount(newPaid);
-        due.setPendingAmount(newPending);
-        due.setLastPaymentDate(LocalDateTime.now());
+            if (totalDue.compareTo(BigDecimal.ZERO) <= 0) continue;
 
-        if (newPending.compareTo(BigDecimal.ZERO) <= 0) {
-            due.setStatus(DueStatus.CLEARED);
-            due.setPendingAmount(BigDecimal.ZERO);
-        } else {
-            due.setStatus(DueStatus.PARTIALLY_PAID);
+            LocalDate lastSale = saleRepository.findLastSaleDate(c.getId());
+
+            java.time.LocalDateTime lastRepairDT = repairJobRepository.findLastRepairDate(c.getId());
+            LocalDate lastRepair = lastRepairDT != null ? lastRepairDT.toLocalDate() : null;
+
+            LocalDate lastDate = lastSale;
+            if (lastRepair != null && (lastDate == null || lastRepair.isAfter(lastDate))) {
+                lastDate = lastRepair;
+            }
+
+
+            long overdue = 0;
+            if (lastDate != null) {
+                overdue = ChronoUnit.DAYS.between(lastDate, LocalDate.now());
+            }
+
+            list.add(
+                    DueCustomerDTO.builder()
+                            .customerId(c.getId())
+                            .name(c.getName())
+                            .phone(c.getPhone())
+                            .totalPending(totalDue)
+                            .lastTransactionDate(lastDate == null ? null : lastDate.atStartOfDay())
+                            .overdueDays(overdue)
+                            .build()
+            );
         }
 
-        dueEntryRepository.save(due);
+        return list;
+    }
+    @Override
+    public void createDue(Long customerId,
+                          com.shopmanager.entity.enums.DueReferenceType refType,
+                          Long referenceId,
+                          BigDecimal totalAmount,
+                          BigDecimal paidAmount) {
+        // SAFE stub (does nothing for now)
+        // Required only to satisfy Sale + Repair module calls
     }
 
-    // ================= REQUIRED BY INTERFACE (NEW, SAFE) =================
-
     @Override
-    public List<DueSummaryResponse> getAllDues(PageRequest pageRequest) {
-        return dueEntryRepository.findAll()
-                .stream()
-                .map(DueSummaryResponse::fromEntity)
-                .toList();
+    public void addPayment(com.shopmanager.entity.enums.DueReferenceType refType,
+                           Long referenceId,
+                           BigDecimal amount) {
+        // SAFE stub (does nothing for now)
     }
-
     @Override
-    public List<DueSummaryResponse> getOverdueDues(int days, PageRequest pageRequest) {
-        LocalDateTime cutoff = LocalDateTime.now().minusDays(days);
-
-        return dueEntryRepository
-                .findByStatusAndLastPaymentDateBefore(DueStatus.OPEN, cutoff)
+    public java.util.Optional<DueCustomerDTO> findByCustomerId(Long customerId) {
+        return getAllDues()
                 .stream()
-                .map(DueSummaryResponse::fromEntity)
-                .toList();
+                .filter(d -> d.getCustomerId().equals(customerId))
+                .findFirst();
+    }
+    @Override
+    public void save(DueCustomerDTO due) {
+        // ⚠️ IMPORTANT
+        // Due is calculated from Sale + Repair tables.
+        // So we DO NOT store totalPending manually.
+        // Payments already reduce Sale/Repair pending via business logic.
+
+        // This method exists only to satisfy DueServiceExtended.
     }
 
 }

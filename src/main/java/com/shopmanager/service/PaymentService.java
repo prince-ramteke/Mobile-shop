@@ -8,6 +8,7 @@ import java.util.List;
 public interface PaymentService {
 
     PaymentResponse addPayment(PaymentRequest request);
+    List<com.shopmanager.entity.due.DuePayment> getDuePaymentsByCustomer(Long customerId);
 
     List<PaymentResponse> getPaymentsBySale(Long saleId);
 }
