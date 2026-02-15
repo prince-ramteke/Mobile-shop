@@ -165,14 +165,23 @@ sorter: (a, b) => a.totalPending - b.totalPending,
     width: 220,
     render: (_, record) => (
         <Space>
-            <ReminderTrigger
-                type="due"
-                targetId={record.customerId}
-                customerName={record.name}
-                amount={record.totalPending}
-                buttonText="Send Reminder"
-                onSuccess={loadDues}
-            />
+            <Button
+    icon={<WhatsAppOutlined />}
+    style={{ background: "#25D366", color: "#fff", borderColor: "#25D366" }}
+    size="small"
+    onClick={async () => {
+        try {
+            await reminderService.sendWhatsAppReminder(record.customerId);
+            message.success("WhatsApp reminder sent");
+        } catch (e) {
+            console.error(e);
+            message.error("Failed to send WhatsApp");
+        }
+    }}
+>
+    Send Reminder
+</Button>
+
 
             <Button
                 type="primary"
