@@ -13,6 +13,8 @@ import java.math.BigDecimal;
 @Service
 public interface DueServiceExtended {
 
+    String sendWhatsAppReminder(Long customerId);
+
     // Existing methods
     void createDue(Long customerId, DueReferenceType referenceType, Long referenceId,
                    BigDecimal totalAmount, BigDecimal paidAmount);
