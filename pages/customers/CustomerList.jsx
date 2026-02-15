@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
+
 import {
     Card,
     Table,
@@ -37,6 +39,9 @@ const CustomerList = () => {
     const [editingCustomer, setEditingCustomer] = useState(null);
     const [form] = Form.useForm();
     const [submitting, setSubmitting] = useState(false);
+
+    const navigate = useNavigate();
+
 
     useEffect(() => {
         loadCustomers();
@@ -142,31 +147,44 @@ const CustomerList = () => {
             ),
         },
         {
-            title: 'Actions',
-            key: 'action',
-            render: (_, record) => (
-                <Space>
-                    <Button
-                        type="text"
-                        icon={<EditOutlined style={{ color: 'var(--color-primary)' }} />}
-                        onClick={() => handleEdit(record)}
-                    />
-                    <Popconfirm
-                        title="Delete Customer"
-                        description="Are you sure you want to delete this customer?"
-                        onConfirm={() => handleDelete(record.id)}
-                        okText="Yes"
-                        cancelText="No"
-                    >
-                        <Button
-                            type="text"
-                            danger
-                            icon={<DeleteOutlined />}
-                        />
-                    </Popconfirm>
-                </Space>
-            ),
-        },
+    title: 'Actions',
+    key: 'action',
+    render: (_, record) => (
+        <Space>
+
+            {/* ✅ LEDGER BUTTON */}
+            <Button
+                type="text"
+                icon={<MobileOutlined style={{ color: '#1890ff' }} />}
+                onClick={() => navigate(`/customers/${record.id}/ledger`)}
+            >
+                Ledger
+            </Button>
+
+            <Button
+                type="text"
+                icon={<EditOutlined style={{ color: 'var(--color-primary)' }} />}
+                onClick={() => handleEdit(record)}
+            />
+
+            <Popconfirm
+                title="Delete Customer"
+                description="Are you sure you want to delete this customer?"
+                onConfirm={() => handleDelete(record.id)}
+                okText="Yes"
+                cancelText="No"
+            >
+                <Button
+                    type="text"
+                    danger
+                    icon={<DeleteOutlined />}
+                />
+            </Popconfirm>
+
+        </Space>
+    ),
+}
+,
     ];
 
     return (

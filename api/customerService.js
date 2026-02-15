@@ -78,3 +78,9 @@ const customerService = {
 };
 
 export default customerService;
+
+// ================= CUSTOMER LEDGER =================
+export const getCustomerLedger = (customerId) => {
+  return axiosClient.get(`/customers/${customerId}/ledger`);
+};
+
