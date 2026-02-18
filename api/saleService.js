@@ -105,3 +105,64 @@ const saleService = {
 };
 
 export default saleService;
+
+// ================= MOBILE SALES (NEW PHONE MODULE) =================
+
+// Create Mobile Sale
+saleService.createMobileSale = async (data) => {
+    const res = await axiosClient.post('/api/mobile-sales', data);
+    return res.data;
+};
+
+// Update Mobile Sale
+saleService.updateMobileSale = async (id, data) => {
+    const res = await axiosClient.put(`/api/mobile-sales/${id}`, data);
+    return res.data;
+};
+
+
+// Get All Mobile Sales
+saleService.getMobileSales = async () => {
+    const res = await axiosClient.get('/api/mobile-sales');
+    return res.data;
+};
+
+// Get Mobile Sale By ID
+saleService.getMobileSaleById = async (id) => {
+    const res = await axiosClient.get(`/api/mobile-sales/${id}`);
+    return res.data;
+};
+
+// Download Mobile Invoice PDF
+saleService.downloadMobileInvoice = async (id) => {
+    const res = await axiosClient.get(`/api/mobile-sales/${id}/invoice`, {
+        responseType: 'blob',
+    });
+    return res.data;
+};
+
+// Recover Pending Payment (Mobile Sale)
+saleService.recoverPayment = async (id, amount) => {
+    const res = await axiosClient.put(`/api/mobile-sales/${id}/recover?amount=${amount}`);
+    return res.data;
+};
+
+
+// Get Pending Mobile Sales
+saleService.getPendingMobileSales = async () => {
+  const res = await axiosClient.get('/api/mobile-sales/pending');
+  return res.data;
+};
+// Recovery Ledger
+saleService.getRecoveryLedger = async (id) => {
+  const res = await axiosClient.get(`/api/mobile-sales/${id}/ledger`);
+  return res.data;
+};
+
+// Send WhatsApp Reminder
+saleService.sendReminder = async (id) => {
+  const res = await axiosClient.post(`/api/mobile-sales/${id}/send-reminder`);
+  return res.data;
+};
+
+

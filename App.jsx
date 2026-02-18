@@ -31,6 +31,11 @@ import Settings from './pages/settings/Settings';
 import RepairDetails from './pages/repairs/RepairDetails';
 import RepairEdit from './pages/repairs/RepairEdit';
 
+import CreateMobileSale from './pages/mobileSales/CreateMobileSale';
+import MobileSaleList from './pages/mobileSales/MobileSaleList';
+import MobileSaleDetails from './pages/mobileSales/MobileSaleDetails';
+import EditMobileSale from './pages/mobileSales/EditMobileSale';
+
 
 
 // App content with theme-aware Ant Design config
@@ -86,6 +91,15 @@ const AppContent = () => {
             <Route path="sales" element={<SaleList />} />
             <Route path="sales/create" element={<CreateSale />} />
             <Route path="sales/:id" element={<SaleDetails />} />
+
+            {/* Mobile Sales (New Phone Module) */}
+<Route path="mobile-sales" element={<MobileSaleList />} />
+<Route path="mobile-sales/create" element={<CreateMobileSale />} />
+<Route path="mobile-sales/:id" element={<MobileSaleDetails />} />
+
+<Route path="/mobile-sales/:id/edit" element={<EditMobileSale />} />
+
+
 
 {/* Repairs */}
 <Route path="repairs" element={<RepairList />} />

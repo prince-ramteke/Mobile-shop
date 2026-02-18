@@ -14,8 +14,9 @@ import {
     MenuUnfoldOutlined,
     FileTextOutlined,
     BellOutlined,
-    MobileOutlined,
+    MobileOutlined,   // ✅ KEEP ONLY THIS ONE
 } from '@ant-design/icons';
+
 import { useAuth } from '../../context/AuthContext';
 
 const { Sider } = Layout;
@@ -44,6 +45,14 @@ const Sidebar = ({ collapsed, onCollapse }) => {
                 { key: 'sale-list', label: 'All Sales', path: '/sales' },
             ],
         },
+ {
+  key: 'mobile-sales',
+  icon: <MobileOutlined />,
+  label: 'Mobile Sales',
+  path: '/mobile-sales',   // ✅ ADD THIS
+},
+
+
         {
             key: 'repairs',
             icon: <ToolOutlined />,
