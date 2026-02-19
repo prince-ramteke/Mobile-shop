@@ -33,4 +33,7 @@ public class MobileSaleResponse {
     private String customerName;
     private String customerPhone;
     private String customerAddress;
+
+    private Long customerId;
+
 }

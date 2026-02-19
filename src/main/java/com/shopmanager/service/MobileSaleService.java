@@ -4,12 +4,17 @@ import com.shopmanager.dto.mobileSale.MobileSaleRequest;
 import com.shopmanager.dto.mobileSale.MobileSaleResponse;
 import com.shopmanager.entity.MobileSale;
 
+import com.shopmanager.dto.CustomerLedgerRow;
 
 
 import java.util.List;
 
 public interface MobileSaleService {
 
+
+    List<MobileSaleResponse> search(String txt);
+
+    List<CustomerLedgerRow> getCustomerLedger(Long customerId);
 
     Long createSale(MobileSaleRequest request);
 

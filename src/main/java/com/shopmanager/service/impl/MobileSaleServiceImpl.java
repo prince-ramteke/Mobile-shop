@@ -1,5 +1,6 @@
 package com.shopmanager.service.impl;
 
+import com.shopmanager.dto.CustomerLedgerRow;
 import com.shopmanager.dto.mobileSale.MobileSaleRequest;
 import com.shopmanager.dto.mobileSale.MobileSaleResponse;
 import com.shopmanager.entity.Customer;
@@ -14,9 +15,12 @@ import org.springframework.stereotype.Service;
 import com.shopmanager.entity.MobileSaleRecovery;
 import com.shopmanager.repository.MobileSaleRecoveryRepository;
 
+import java.util.ArrayList;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -32,10 +36,49 @@ public class MobileSaleServiceImpl implements MobileSaleService {
 
     private final WhatsAppService whatsAppService;
 
+
+    @Override
+    public List<MobileSaleResponse> search(String txt) {
+
+        if (txt == null || txt.trim().isEmpty()) {
+            return getAll();
+        }
+
+        return saleRepository.search(txt)
+                .stream()
+                .map(sale -> {
+
+                    Customer customer = customerRepository
+                            .findById(sale.getCustomerId())
+                            .orElse(null);
+
+                    return MobileSaleResponse.builder()
+                            .id(sale.getId())
+                            .company(sale.getCompany())
+                            .model(sale.getModel())
+                            .imei1(sale.getImei1())
+                            .imei2(sale.getImei2())
+                            .quantity(sale.getQuantity())
+                            .price(sale.getPrice())
+                            .totalAmount(sale.getTotalAmount())
+                            .advancePaid(sale.getAdvancePaid())
+                            .pendingAmount(sale.getPendingAmount())
+                            .warrantyYears(sale.getWarrantyYears())
+                            .warrantyExpiry(sale.getWarrantyExpiry())
+                            .createdAt(sale.getCreatedAt())
+                            .customerId(customer != null ? customer.getId() : null)
+                            .customerName(customer != null ? customer.getName() : "")
+                            .customerPhone(customer != null ? customer.getPhone() : "")
+                            .customerAddress(customer != null ? customer.getAddress() : "")
+                            .build();
+                })
+                .toList();
+    }
+
     @Override
     public List<MobileSaleResponse> getAll() {
 
-        return saleRepository.findAll()
+        return saleRepository.findAllByOrderByIdDesc()
                 .stream()
                 .map(sale -> {
 
@@ -60,9 +103,9 @@ public class MobileSaleServiceImpl implements MobileSaleService {
                             .customerName(customer != null ? customer.getName() : "")
                             .customerPhone(customer != null ? customer.getPhone() : "")
                             .customerAddress(customer != null ? customer.getAddress() : "")
+                            .customerId(customer != null ? customer.getId() : null)
                             .build();
                 })
-                .sorted((a, b) -> b.getId().compareTo(a.getId())) // newest first
                 .toList();
     }
 
@@ -94,6 +137,7 @@ public class MobileSaleServiceImpl implements MobileSaleService {
                 .customerName(customer != null ? customer.getName() : "")
                 .customerPhone(customer != null ? customer.getPhone() : "")
                 .customerAddress(customer != null ? customer.getAddress() : "")
+                .customerId(customer != null ? customer.getId() : null)
                 .build();
     }
 
@@ -143,14 +187,12 @@ public class MobileSaleServiceImpl implements MobileSaleService {
 // Generate PDF (for later download + WhatsApp)
         pdfService.generateMobileSaleInvoicePdf(saved.getId());
 
-        whatsAppService.sendInvoice(saved.getId());
-
-// 🔔 WhatsApp Hook (Meta integration later)
         try {
             whatsAppService.sendInvoice(saved.getId());
         } catch (Exception e) {
             System.out.println("WhatsApp hook failed: " + e.getMessage());
         }
+
 
         return saved.getId();
 
@@ -240,5 +282,58 @@ public class MobileSaleServiceImpl implements MobileSaleService {
     public List<MobileSale> getPendingSales() {
         return saleRepository.findByPendingAmountGreaterThanOrderByCreatedAtDesc(BigDecimal.ZERO);
     }
+
+
+    @Override
+    public List<CustomerLedgerRow> getCustomerLedger(Long customerId) {
+
+        List<MobileSale> sales = saleRepository.findAll()
+                .stream()
+                .filter(s -> s.getCustomerId().equals(customerId))
+                .sorted((a, b) -> a.getCreatedAt().compareTo(b.getCreatedAt())) // oldest first
+                .toList();
+
+
+        List<CustomerLedgerRow> rows = new ArrayList<>();
+
+        double balance = 0;
+
+        for (MobileSale sale : sales) {
+
+            double total = sale.getTotalAmount().doubleValue();
+            balance += total;
+
+            rows.add(CustomerLedgerRow.builder()
+                    .type("SALE")
+                    .saleId(sale.getId())
+                    .debit(total)
+                    .credit(0.0)
+                    .balance(balance)
+                    .date(sale.getCreatedAt())
+                    .build());
+
+            List<MobileSaleRecovery> recs =
+                    recoveryRepository.findBySaleIdOrderByCreatedAtDesc(sale.getId());
+
+            for (MobileSaleRecovery r : recs) {
+                balance -= r.getAmount();
+                if (balance < 0) balance = 0;
+
+                rows.add(CustomerLedgerRow.builder()
+                        .type("RECOVERY")
+                        .saleId(sale.getId())
+                        .debit(0.0)
+                        .credit(r.getAmount())
+                        .balance(balance)
+                        .date(r.getCreatedAt())
+                        .build());
+            }
+        }
+
+        rows.sort((a, b) -> b.getDate().compareTo(a.getDate()));
+        return rows;
+    }
+
+
 
 }
