@@ -3,6 +3,9 @@ import { Card, Form, Input, InputNumber, Button, Typography, message } from 'ant
 import { useNavigate } from 'react-router-dom';
 import saleService from '../../api/saleService';
 
+import { Select } from 'antd';
+
+
 const { Title } = Typography;
 
 const CreateMobileSale = () => {
@@ -73,6 +76,33 @@ navigate(`/mobile-sales/${res.id || res}`);
                 <Form.Item name="customerAddress" label="Address">
                     <Input.TextArea rows={2} />
                 </Form.Item>
+
+                <Form.Item name="emiEnabled" label="EMI" initialValue={false}>
+  <Select>
+    <Select.Option value={false}>No</Select.Option>
+    <Select.Option value={true}>Yes</Select.Option>
+  </Select>
+</Form.Item>
+
+            <Form.Item shouldUpdate={(prev, curr) => prev.emiEnabled !== curr.emiEnabled}>
+  {({ getFieldValue }) =>
+    getFieldValue('emiEnabled') ? (
+      <>
+        <Form.Item name="emiInterestRate" label="Interest %" initialValue={18}>
+          <InputNumber min={0} max={30} style={{ width: '100%' }} />
+        </Form.Item>
+
+        <Form.Item name="emiProcessingFee" label="Processing Fee" initialValue={0}>
+          <InputNumber min={0} style={{ width: '100%' }} />
+        </Form.Item>
+
+        <Form.Item name="emiMonths" label="EMI Months" initialValue={6}>
+          <InputNumber min={1} max={36} style={{ width: '100%' }} />
+        </Form.Item>
+      </>
+    ) : null
+  }
+</Form.Item>
 
                 <Button type="primary" htmlType="submit" loading={loading} block>
                     Create Sale
