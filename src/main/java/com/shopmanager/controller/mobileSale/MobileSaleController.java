@@ -1,6 +1,7 @@
 package com.shopmanager.controller.mobileSale;
 
 import com.shopmanager.dto.mobileSale.MobileSaleRequest;
+import com.shopmanager.dto.mobileSale.MobileSaleResponse;
 import com.shopmanager.service.MobileSaleService;
 import com.shopmanager.service.PdfService;
 import com.shopmanager.service.WhatsAppService;
@@ -8,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.shopmanager.repository.MobileSaleRecoveryRepository;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/mobile-sales")
@@ -20,6 +23,12 @@ public class MobileSaleController {
     private final PdfService pdfService;
 
     private final MobileSaleService saleService;
+
+
+    @GetMapping("/search")
+    public List<MobileSaleResponse> search(@RequestParam String txt) {
+        return saleService.search(txt);
+    }
 
     @PostMapping
     public Long create(@RequestBody MobileSaleRequest request) {
@@ -84,5 +93,11 @@ public class MobileSaleController {
         );
     }
 
+    @GetMapping("/customer/{customerId}/ledger")
+    public ResponseEntity<?> customerLedger(@PathVariable Long customerId) {
+        return ResponseEntity.ok(
+                saleService.getCustomerLedger(customerId)
+        );
+    }
 
 }
