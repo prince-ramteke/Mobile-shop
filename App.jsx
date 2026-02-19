@@ -3,10 +3,6 @@ import { ConfigProvider, theme } from 'antd';
 import { AuthProvider } from './context/AuthContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 
-
-import CustomerLedger from "./pages/customers/CustomerLedger";
-
-
 // Layout
 import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -36,6 +32,7 @@ import MobileSaleList from './pages/mobileSales/MobileSaleList';
 import MobileSaleDetails from './pages/mobileSales/MobileSaleDetails';
 import EditMobileSale from './pages/mobileSales/EditMobileSale';
 
+import CustomerLedger from "./pages/mobileSales/CustomerLedger";
 
 
 // App content with theme-aware Ant Design config
@@ -84,8 +81,6 @@ const AppContent = () => {
 
             {/* Customers */}
             <Route path="customers" element={<CustomerList />} />
-            <Route path="/customers/:id/ledger" element={<CustomerLedger />} />
-
 
             {/* Sales */}
             <Route path="sales" element={<SaleList />} />
@@ -97,9 +92,9 @@ const AppContent = () => {
 <Route path="mobile-sales/create" element={<CreateMobileSale />} />
 <Route path="mobile-sales/:id" element={<MobileSaleDetails />} />
 
-<Route path="/mobile-sales/:id/edit" element={<EditMobileSale />} />
+<Route path="mobile-sales/:id/edit" element={<EditMobileSale />} />
 
-
+<Route path="customer-ledger/:customerId" element={<CustomerLedger />} />
 
 {/* Repairs */}
 <Route path="repairs" element={<RepairList />} />
