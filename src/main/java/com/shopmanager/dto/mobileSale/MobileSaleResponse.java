@@ -36,4 +36,12 @@ public class MobileSaleResponse {
 
     private Long customerId;
 
+    private Boolean emiEnabled;
+    private Integer emiMonths;
+    private Double emiInterestRate;
+    private Double emiProcessingFee;
+    private Double emiInterestAmount;
+    private Double emiTotalPayable;
+    private Double emiMonthlyAmount;
+
 }

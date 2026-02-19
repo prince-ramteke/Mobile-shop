@@ -23,4 +23,13 @@ public class MobileSaleRequest {
     private String customerName;
     private String customerPhone;
     private String customerAddress;
+
+    private Boolean emiEnabled;
+
+    private Integer emiMonths;
+
+    private Double emiInterestRate;
+
+    private Double emiProcessingFee;
+
 }

@@ -52,4 +52,18 @@ public class MobileSale {
     @Transient
     private String customerAddress;
 
+    private Boolean emiEnabled = false;
+
+    private Integer emiMonths;
+
+    private Double emiInterestRate;
+
+    private Double emiProcessingFee;
+
+    private Double emiInterestAmount;
+
+    private Double emiTotalPayable;
+
+    private Double emiMonthlyAmount;
+
 }

@@ -70,6 +70,14 @@ public class MobileSaleServiceImpl implements MobileSaleService {
                             .customerName(customer != null ? customer.getName() : "")
                             .customerPhone(customer != null ? customer.getPhone() : "")
                             .customerAddress(customer != null ? customer.getAddress() : "")
+                            .emiEnabled(sale.getEmiEnabled())
+                            .emiMonths(sale.getEmiMonths())
+                            .emiInterestRate(sale.getEmiInterestRate())
+                            .emiProcessingFee(sale.getEmiProcessingFee())
+                            .emiInterestAmount(sale.getEmiInterestAmount())
+                            .emiTotalPayable(sale.getEmiTotalPayable())
+                            .emiMonthlyAmount(sale.getEmiMonthlyAmount())
+
                             .build();
                 })
                 .toList();
@@ -104,6 +112,14 @@ public class MobileSaleServiceImpl implements MobileSaleService {
                             .customerPhone(customer != null ? customer.getPhone() : "")
                             .customerAddress(customer != null ? customer.getAddress() : "")
                             .customerId(customer != null ? customer.getId() : null)
+                            .emiEnabled(sale.getEmiEnabled())
+                            .emiMonths(sale.getEmiMonths())
+                            .emiInterestRate(sale.getEmiInterestRate())
+                            .emiProcessingFee(sale.getEmiProcessingFee())
+                            .emiInterestAmount(sale.getEmiInterestAmount())
+                            .emiTotalPayable(sale.getEmiTotalPayable())
+                            .emiMonthlyAmount(sale.getEmiMonthlyAmount())
+
                             .build();
                 })
                 .toList();
@@ -138,6 +154,15 @@ public class MobileSaleServiceImpl implements MobileSaleService {
                 .customerPhone(customer != null ? customer.getPhone() : "")
                 .customerAddress(customer != null ? customer.getAddress() : "")
                 .customerId(customer != null ? customer.getId() : null)
+
+                .emiEnabled(sale.getEmiEnabled())
+                .emiMonths(sale.getEmiMonths())
+                .emiInterestRate(sale.getEmiInterestRate())
+                .emiProcessingFee(sale.getEmiProcessingFee())
+                .emiInterestAmount(sale.getEmiInterestAmount())
+                .emiTotalPayable(sale.getEmiTotalPayable())
+                .emiMonthlyAmount(sale.getEmiMonthlyAmount())
+
                 .build();
     }
 
@@ -160,13 +185,41 @@ public class MobileSaleServiceImpl implements MobileSaleService {
 
         BigDecimal total = req.getPrice().multiply(BigDecimal.valueOf(req.getQuantity()));
         BigDecimal pending = total.subtract(req.getAdvancePaid());
+
         if (pending.compareTo(BigDecimal.ZERO) < 0) {
             pending = BigDecimal.ZERO;
+        }
+        Boolean emi = Boolean.TRUE.equals(req.getEmiEnabled());
+
+
+        Double emiInterestAmount = 0.0;
+        Double emiTotalPayable = 0.0;
+        Double emiMonthly = 0.0;
+
+        if (emi) {
+            double pendingVal = pending.doubleValue();
+            double interestRate = req.getEmiInterestRate() != null ? req.getEmiInterestRate() : 0;
+            double processing = req.getEmiProcessingFee() != null ? req.getEmiProcessingFee() : 0;
+            int months = req.getEmiMonths() != null ? req.getEmiMonths() : 1;
+
+            emiInterestAmount = pendingVal * (interestRate / 100.0);
+            emiTotalPayable = pendingVal + emiInterestAmount + processing;
+            emiMonthly = emiTotalPayable / months;
         }
 
         LocalDate expiry = LocalDate.now().plusYears(req.getWarrantyYears());
 
         MobileSale sale = MobileSale.builder()
+
+                .emiEnabled(emi)
+                .emiMonths(req.getEmiMonths())
+                .emiInterestRate(req.getEmiInterestRate())
+                .emiProcessingFee(req.getEmiProcessingFee())
+                .emiInterestAmount(emiInterestAmount)
+                .emiTotalPayable(emiTotalPayable)
+                .emiMonthlyAmount(emiMonthly)
+
+
                 .company(req.getCompany())
                 .model(req.getModel())
                 .imei1(req.getImei1())
@@ -180,6 +233,7 @@ public class MobileSaleServiceImpl implements MobileSaleService {
                 .warrantyExpiry(expiry)
                 .customerId(customer.getId())
                 .createdAt(LocalDateTime.now())
+
                 .build();
 
         MobileSale saved = saleRepository.save(sale);
@@ -258,6 +312,24 @@ public class MobileSaleServiceImpl implements MobileSaleService {
         BigDecimal pending = total.subtract(req.getAdvancePaid());
         if (pending.compareTo(BigDecimal.ZERO) < 0) pending = BigDecimal.ZERO;
 
+        Boolean emi = Boolean.TRUE.equals(req.getEmiEnabled());
+
+        Double emiInterestAmount = 0.0;
+        Double emiTotalPayable = 0.0;
+        Double emiMonthly = 0.0;
+
+        if (emi) {
+            double pendingVal = pending.doubleValue();
+            double interestRate = req.getEmiInterestRate() != null ? req.getEmiInterestRate() : 0;
+            double processing = req.getEmiProcessingFee() != null ? req.getEmiProcessingFee() : 0;
+            int months = req.getEmiMonths() != null ? req.getEmiMonths() : 1;
+
+            emiInterestAmount = pendingVal * (interestRate / 100.0);
+            emiTotalPayable = pendingVal + emiInterestAmount + processing;
+            emiMonthly = emiTotalPayable / months;
+        }
+
+
         LocalDate expiry = LocalDate.now().plusYears(req.getWarrantyYears());
 
         // Update fields
@@ -273,6 +345,14 @@ public class MobileSaleServiceImpl implements MobileSaleService {
         sale.setWarrantyYears(req.getWarrantyYears());
         sale.setWarrantyExpiry(expiry);
         sale.setCustomerId(customer.getId());
+
+        sale.setEmiEnabled(emi);
+        sale.setEmiMonths(req.getEmiMonths());
+        sale.setEmiInterestRate(req.getEmiInterestRate());
+        sale.setEmiProcessingFee(req.getEmiProcessingFee());
+        sale.setEmiInterestAmount(emiInterestAmount);
+        sale.setEmiTotalPayable(emiTotalPayable);
+        sale.setEmiMonthlyAmount(emiMonthly);
 
         saleRepository.save(sale);
 
