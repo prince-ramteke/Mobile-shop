@@ -158,10 +158,27 @@ saleService.getRecoveryLedger = async (id) => {
   const res = await axiosClient.get(`/api/mobile-sales/${id}/ledger`);
   return res.data;
 };
+saleService.getCustomerLedger = async (customerId) => {
+  const res = await axiosClient.get(
+    `/api/mobile-sales/customer/${customerId}/ledger`
+  );
+  return res.data;
+};
+
+
 
 // Send WhatsApp Reminder
 saleService.sendReminder = async (id) => {
   const res = await axiosClient.post(`/api/mobile-sales/${id}/send-reminder`);
+  return res.data;
+};
+
+// Search Mobile Sales (Backend Search)
+saleService.searchMobileSales = async (txt) => {
+  if (!txt || !txt.trim()) {
+    return saleService.getMobileSales();
+  }
+  const res = await axiosClient.get(`/api/mobile-sales/search?txt=${txt}`);
   return res.data;
 };
 

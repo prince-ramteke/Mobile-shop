@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Card, Table, Button, Typography, Space, message, Modal, InputNumber } from 'antd';
 import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import saleService from '../../api/saleService';
+import { Card, Table, Button, Typography, Space, message, Modal, InputNumber, Input } from 'antd';
+
 
 const { Title } = Typography;
 
@@ -17,28 +18,41 @@ const [recoverAmount, setRecoverAmount] = useState(0);
 const [ledgerOpen, setLedgerOpen] = useState(false);
 const [ledgerData, setLedgerData] = useState([]);
 
+const [searchText, setSearchText] = useState("");
+
+
 
   const navigate = useNavigate();
 
   useEffect(() => {
   load();
-}, [showPendingOnly]);
+}, [showPendingOnly, searchText]);
+
 
 
  const load = async () => {
   try {
-    const res = await saleService.getMobileSales();
-    let list = res || [];
+    setLoading(true);
+   let list = [];
 
+if (searchText.trim()) {
+  list = await saleService.searchMobileSales(searchText);
+} else {
+  list = await saleService.getMobileSales();
+}
+
+    // Pending filter
     if (showPendingOnly) {
       list = list.filter(s => Number(s.pendingAmount) > 0);
     }
+
 
     setData(list);
   } finally {
     setLoading(false);
   }
 };
+
 const openRecover = (sale) => {
   setSelectedSale(sale);
   setRecoverAmount(0);
@@ -125,6 +139,21 @@ const openLedger = async (sale) => {
   Recover
 </Button>
 
+<Button
+  disabled={!r.customerId}
+  onClick={() => {
+    if (!r.customerId) {
+      message.error("Customer ID missing");
+      return;
+    }
+    navigate(`/customer-ledger/${r.customerId}`);
+  }}
+>
+  Customer Ledger
+</Button>
+
+
+
 
       <Button
         onClick={async () => {
@@ -155,7 +184,16 @@ const openLedger = async (sale) => {
     <Card>
   <Space style={{ width: '100%', justifyContent: 'space-between' }}>
   <Space>
-    <Title level={3}>Mobile Sales</Title>
+  <Title level={3}>Mobile Sales</Title>
+
+  <Input
+    placeholder="Search customer..."
+    allowClear
+    value={searchText}
+    onChange={(e) => setSearchText(e.target.value)}
+    style={{ width: 220 }}
+  />
+
 
     <Button
       type={!showPendingOnly ? 'primary' : 'default'}
