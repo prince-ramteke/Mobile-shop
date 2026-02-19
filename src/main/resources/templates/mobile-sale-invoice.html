@@ -53,6 +53,23 @@ Expiry: <span th:text="${#temporals.format(warrantyExpiry, 'dd-MM-yyyy')}"></spa
   <tr><td><b>Total Amount</b></td><td class="right">₹ <span th:text="${#numbers.formatDecimal(total, 1, 2)}"></span></td></tr>
   <tr><td>Advance Paid</td><td class="right">₹ <span th:text="${#numbers.formatDecimal(advance, 1, 2)}"></span></td></tr>
   <tr><td><b>Balance Due</b></td><td class="right">₹ <span th:text="${#numbers.formatDecimal(pending, 1, 2)}"></span></td></tr>
+
+  <!-- ================= EMI SECTION ================= -->
+  <div th:if="${emiEnabled}">
+
+    <hr/>
+
+    <h3>EMI Details</h3>
+
+    <p><strong>Months:</strong> <span th:text="${emiMonths}"></span></p>
+    <p><strong>Interest Rate:</strong> <span th:text="${emiInterestRate}"></span>%</p>
+    <p><strong>Processing Fee:</strong> ₹<span th:text="${emiProcessingFee}"></span></p>
+    <p><strong>Interest Amount:</strong> ₹<span th:text="${emiInterestAmount}"></span></p>
+    <p><strong>Total Payable:</strong> ₹<span th:text="${emiTotalPayable}"></span></p>
+    <p><strong>Monthly EMI:</strong> ₹<span th:text="${emiMonthlyAmount}"></span></p>
+
+  </div>
+
 </table>
 <hr/>
 Payment Mode: <span th:text="${paymentMode}"></span>

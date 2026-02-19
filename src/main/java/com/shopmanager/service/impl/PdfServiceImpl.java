@@ -60,6 +60,16 @@ public class PdfServiceImpl implements PdfService {
         ctx.setVariable("advance", sale.getAdvancePaid());
         ctx.setVariable("pending", sale.getPendingAmount());
 
+        // ================= EMI VARIABLES =================
+        ctx.setVariable("emiEnabled", sale.getEmiEnabled());
+        ctx.setVariable("emiMonths", sale.getEmiMonths());
+        ctx.setVariable("emiInterestRate", sale.getEmiInterestRate());
+        ctx.setVariable("emiProcessingFee", sale.getEmiProcessingFee());
+        ctx.setVariable("emiInterestAmount", sale.getEmiInterestAmount());
+        ctx.setVariable("emiTotalPayable", sale.getEmiTotalPayable());
+        ctx.setVariable("emiMonthlyAmount", sale.getEmiMonthlyAmount());
+
+
         ctx.setVariable("warrantyYears", sale.getWarrantyYears());
         ctx.setVariable("warrantyExpiry", sale.getWarrantyExpiry());
         // Customer Info
