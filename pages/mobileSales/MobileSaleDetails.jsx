@@ -50,6 +50,21 @@ const MobileSaleDetails = () => {
 <Text><b>Advance Paid:</b> ₹{sale.advancePaid}</Text><br/>
 <Text><b>Pending Amount:</b> ₹{sale.pendingAmount}</Text><br/>
 
+{sale.emiEnabled && (
+  <>
+    <br/>
+    <Title level={5}>EMI Details</Title>
+
+    <Text><b>Months:</b> {sale.emiMonths}</Text><br/>
+    <Text><b>Interest Rate:</b> {sale.emiInterestRate}%</Text><br/>
+    <Text><b>Processing Fee:</b> ₹{sale.emiProcessingFee}</Text><br/>
+    <Text><b>Interest Amount:</b> ₹{sale.emiInterestAmount}</Text><br/>
+    <Text><b>Total Payable:</b> ₹{sale.emiTotalPayable}</Text><br/>
+    <Text><b>Monthly EMI:</b> ₹{sale.emiMonthlyAmount}</Text><br/>
+  </>
+)}
+
+
 <br/>
 
 <Text><b>Warranty:</b> {sale.warrantyYears} year(s)</Text><br/>
