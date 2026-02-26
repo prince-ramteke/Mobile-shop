@@ -1,5 +1,6 @@
 package com.shopmanager.report.service;
 
+import com.shopmanager.dto.report.DashboardSummaryDto;
 import com.shopmanager.dto.report.RevenueTrendItem;
 import com.shopmanager.dto.report.SalesSummaryResponse;
 import com.shopmanager.report.dto.DailySalesReportDto;
@@ -14,6 +15,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface ReportService {
+
+//    DashboardSummaryDto getDashboardSummary();
 
     DailySalesReportDto getDailySales(LocalDate date);
 

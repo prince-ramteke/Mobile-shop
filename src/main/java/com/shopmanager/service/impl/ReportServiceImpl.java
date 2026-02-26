@@ -1,6 +1,7 @@
 package com.shopmanager.service.impl;
 
 import com.shopmanager.dto.report.DailyReportDto;
+import com.shopmanager.dto.report.DashboardSummaryDto;
 import com.shopmanager.dto.report.MonthlyReportDto;
 import com.shopmanager.entity.MobileSale;
 import com.shopmanager.entity.RepairJob;
@@ -281,5 +282,82 @@ public class ReportServiceImpl implements ReportService {
                 .gstCollected(0.0)
                 .growth(growth)                .dailyData(dailyData)
                 .topCustomers(topCustomers)                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DashboardSummaryDto getDashboardSummary() {
+
+        LocalDate today = LocalDate.now();
+
+        LocalDateTime startDay = today.atStartOfDay();
+        LocalDateTime endDay = today.atTime(23,59,59);
+
+        // TODAY SALES + REPAIRS
+        List<MobileSale> todaySalesList = mobileSaleRepository.findByCreatedAtBetween(startDay, endDay);
+        List<RepairJob> todayRepairsList = repairJobRepository.findByCreatedAtBetween(startDay, endDay);
+
+        double todaySales = todaySalesList.stream()
+                .mapToDouble(s -> s.getTotalAmount() != null ? s.getTotalAmount().doubleValue() : 0)
+                .sum();
+
+        double todayRepairRevenue = todayRepairsList.stream()
+                .mapToDouble(r -> {
+                    if (r.getFinalCost() != null) return r.getFinalCost().doubleValue();
+                    if (r.getAdvancePaid() != null) return r.getAdvancePaid().doubleValue();
+                    return 0.0;
+                }).sum();
+
+        double todayRevenue = todaySales + todayRepairRevenue;
+
+        long todayRepairs = todayRepairsList.size();
+
+        // MONTH REVENUE
+        YearMonth ym = YearMonth.now();
+        LocalDateTime startMonth = ym.atDay(1).atStartOfDay();
+        LocalDateTime endMonth = ym.atEndOfMonth().atTime(23,59,59);
+
+        double monthSales = mobileSaleRepository.findByCreatedAtBetween(startMonth, endMonth)
+                .stream()
+                .mapToDouble(s -> s.getTotalAmount() != null ? s.getTotalAmount().doubleValue() : 0)
+                .sum();
+
+        double monthRepairs = repairJobRepository.findByCreatedAtBetween(startMonth, endMonth)
+                .stream()
+                .mapToDouble(r -> {
+                    if (r.getFinalCost() != null) return r.getFinalCost().doubleValue();
+                    if (r.getAdvancePaid() != null) return r.getAdvancePaid().doubleValue();
+                    return 0.0;
+                }).sum();
+
+        double monthRevenue = monthSales + monthRepairs;
+
+        // PENDING REPAIR AMOUNT
+        double pendingAmount = repairJobRepository.findAll().stream()
+                .mapToDouble(r -> r.getPendingAmount() != null ? r.getPendingAmount().doubleValue() : 0)
+                .sum();
+
+        // GROWTH
+        YearMonth prev = ym.minusMonths(1);
+        LocalDateTime prevStart = prev.atDay(1).atStartOfDay();
+        LocalDateTime prevEnd = prev.atEndOfMonth().atTime(23,59,59);
+
+        double prevMonthSales = mobileSaleRepository.findByCreatedAtBetween(prevStart, prevEnd)
+                .stream()
+                .mapToDouble(s -> s.getTotalAmount() != null ? s.getTotalAmount().doubleValue() : 0)
+                .sum();
+
+        double growth = prevMonthSales > 0
+                ? Math.round(((monthSales - prevMonthSales) / prevMonthSales) * 100 * 100.0) / 100.0
+                : 0;
+
+        return DashboardSummaryDto.builder()
+                .todayRevenue(todayRevenue)
+                .todaySales(todaySales)
+                .todayRepairs(todayRepairs)
+                .monthRevenue(monthRevenue)
+                .pendingRepairAmount(pendingAmount)
+                .growth(growth)
+                .build();
     }
 }

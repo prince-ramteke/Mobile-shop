@@ -1,6 +1,7 @@
 package com.shopmanager.report.controller;
 
 import com.shopmanager.dto.report.DailyReportDto;
+import com.shopmanager.dto.report.DashboardSummaryDto;
 import com.shopmanager.dto.report.MonthlyReportDto;
 import com.shopmanager.service.ReportService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,12 @@ public class ReportController {
 
     @Qualifier("customReportService")
     private final ReportService reportService;
+
+
+    @GetMapping("/dashboard")
+    public DashboardSummaryDto getDashboard() {
+        return reportService.getDashboardSummary();
+    }
 
     @GetMapping("/daily")
     public DailyReportDto getDaily(@RequestParam String date) {
