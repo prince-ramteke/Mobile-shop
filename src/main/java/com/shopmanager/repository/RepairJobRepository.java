@@ -10,10 +10,13 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 public interface RepairJobRepository extends JpaRepository<RepairJob, Long> {
+
+    List<RepairJob> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
     Optional<RepairJob> findByJobNumber(String jobNumber);
 

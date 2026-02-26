@@ -55,4 +55,40 @@ public interface ReportRepository extends JpaRepository<Sale, Long> {
         WHERE s.saleDate BETWEEN :from AND :to
     """)
     GstSummaryReportDto getGstSummary(LocalDate from, LocalDate to);
+
+
+    @Query("""
+   SELECT COALESCE(SUM(s.grandTotal), 0)
+   FROM Sale s
+   WHERE s.saleDate = :date
+""")
+    Double getDailySalesTotal(LocalDate date);
+
+    @Query("""
+   SELECT COALESCE(SUM(m.totalAmount), 0)
+   FROM MobileSale m
+   WHERE DATE(m.createdAt) = :date
+""")
+    Double getDailyMobileSalesTotal(LocalDate date);
+
+    @Query("""
+   SELECT COALESCE(SUM(r.finalCost), 0)
+   FROM RepairJob r
+   WHERE CAST(r.createdAt AS date) = :date
+""")
+    Double getDailyRepairTotal(LocalDate date);
+
+    @Query("""
+   SELECT COUNT(s)
+   FROM Sale s
+   WHERE s.saleDate = :date
+""")
+    Long getDailySalesCount(LocalDate date);
+
+    @Query("""
+   SELECT COUNT(r)
+   FROM RepairJob r
+   WHERE CAST(r.createdAt AS date) = :date
+""")
+    Long getDailyRepairCount(LocalDate date);
 }
