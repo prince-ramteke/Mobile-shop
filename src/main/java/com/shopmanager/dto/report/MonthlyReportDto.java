@@ -29,11 +29,15 @@ public class MonthlyReportDto {
         private Long repairs;
     }
 
+
     @Data
     @Builder
     public static class TopCustomer {
+
+        private Long customerId;   // needed
+
         private String name;
-        private Double amount;
-        private Long visits;
+
+        private Double totalSpent; // rename from amount
     }
 }

@@ -14,6 +14,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.*;
+
+import com.shopmanager.entity.Customer;
 import java.util.stream.Collectors;
 
 @Service
@@ -222,6 +224,54 @@ public class ReportServiceImpl implements ReportService {
         double growth = prevSales > 0
                 ? Math.round((((totalSales - prevSales) / prevSales) * 100) * 100.0) / 100.0
                 : 0;
+
+        // ===== TOP CUSTOMERS =====
+        Map<Long, Double> customerTotals = new HashMap<>();
+
+// Add Mobile Sales revenue per customer
+        for (MobileSale s : sales) {
+            if (s.getCustomerId() == null) continue;
+
+            double amount = s.getTotalAmount() != null
+                    ? s.getTotalAmount().doubleValue()
+                    : 0;
+
+            customerTotals.put(
+                    s.getCustomerId(),
+                    customerTotals.getOrDefault(s.getCustomerId(), 0.0) + amount
+            );
+        }
+
+// Add Repair revenue per customer
+        for (RepairJob r : repairs) {
+
+            if (r.getCustomer() == null || r.getCustomer().getId() == null) continue;
+
+            double repairAmount = 0;
+            if (r.getFinalCost() != null) repairAmount = r.getFinalCost().doubleValue();
+            else if (r.getAdvancePaid() != null) repairAmount = r.getAdvancePaid().doubleValue();
+
+            Long customerId = r.getCustomer().getId();
+
+            customerTotals.put(
+                    customerId,
+                    customerTotals.getOrDefault(customerId, 0.0) + repairAmount
+            );
+        }
+
+// Convert to DTO list
+        List<MonthlyReportDto.TopCustomer> topCustomers =
+                customerTotals.entrySet()
+                        .stream()
+                        .sorted((a, b) -> Double.compare(b.getValue(), a.getValue()))
+                        .limit(5)
+                        .map(entry -> MonthlyReportDto.TopCustomer.builder()
+                                .customerId(entry.getKey())
+                                .name("Customer #" + entry.getKey())
+                                .totalSpent(entry.getValue())
+                                .build())
+                        .collect(Collectors.toList());
+
         return MonthlyReportDto.builder()
                 .month(ym.toString())
                 .totalRevenue(totalRevenue)
@@ -230,7 +280,6 @@ public class ReportServiceImpl implements ReportService {
                 .averageDailySales(avgDaily)
                 .gstCollected(0.0)
                 .growth(growth)                .dailyData(dailyData)
-                .topCustomers(Collections.emptyList())
-                .build();
+                .topCustomers(topCustomers)                .build();
     }
 }
