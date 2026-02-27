@@ -1,5 +1,6 @@
 package com.shopmanager.service.impl;
 
+import com.shopmanager.dto.report.AdvancedDashboardDto;
 import com.shopmanager.dto.report.DailyReportDto;
 import com.shopmanager.dto.report.DashboardSummaryDto;
 import com.shopmanager.dto.report.MonthlyReportDto;
@@ -407,6 +408,96 @@ public class ReportServiceImpl implements ReportService {
                 .monthRevenue(monthRevenue)
                 .pendingRepairAmount(pendingAmount)
                 .growth(growth)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdvancedDashboardDto getAdvancedDashboard() {
+
+        LocalDate today = LocalDate.now();
+        LocalDate start30 = today.minusDays(29);
+
+        // ===== Last 30 Days Revenue =====
+        List<AdvancedDashboardDto.RevenueTrend> revenueTrend = new ArrayList<>();
+
+        for (int i = 0; i < 30; i++) {
+            LocalDate date = start30.plusDays(i);
+            LocalDateTime start = date.atStartOfDay();
+            LocalDateTime end = date.atTime(23, 59, 59);
+
+            double sales = mobileSaleRepository.findByCreatedAtBetween(start, end)
+                    .stream()
+                    .mapToDouble(s -> s.getTotalAmount() != null ? s.getTotalAmount().doubleValue() : 0)
+                    .sum();
+
+            double repairs = repairJobRepository.findByCreatedAtBetween(start, end)
+                    .stream()
+                    .mapToDouble(r -> {
+                        if (r.getFinalCost() != null) return r.getFinalCost().doubleValue();
+                        if (r.getAdvancePaid() != null) return r.getAdvancePaid().doubleValue();
+                        return 0.0;
+                    }).sum();
+
+            revenueTrend.add(
+                    AdvancedDashboardDto.RevenueTrend.builder()
+                            .date(date.toString())
+                            .revenue(sales + repairs)
+                            .build()
+            );
+        }
+
+        // ===== Last 6 Months Revenue =====
+        List<AdvancedDashboardDto.MonthlyTrend> monthlyTrend = new ArrayList<>();
+
+        for (int i = 5; i >= 0; i--) {
+            YearMonth ym = YearMonth.now().minusMonths(i);
+            LocalDateTime start = ym.atDay(1).atStartOfDay();
+            LocalDateTime end = ym.atEndOfMonth().atTime(23, 59, 59);
+
+            double sales = mobileSaleRepository.findByCreatedAtBetween(start, end)
+                    .stream()
+                    .mapToDouble(s -> s.getTotalAmount() != null ? s.getTotalAmount().doubleValue() : 0)
+                    .sum();
+
+            double repairs = repairJobRepository.findByCreatedAtBetween(start, end)
+                    .stream()
+                    .mapToDouble(r -> {
+                        if (r.getFinalCost() != null) return r.getFinalCost().doubleValue();
+                        if (r.getAdvancePaid() != null) return r.getAdvancePaid().doubleValue();
+                        return 0.0;
+                    }).sum();
+
+            monthlyTrend.add(
+                    AdvancedDashboardDto.MonthlyTrend.builder()
+                            .month(ym.toString())
+                            .revenue(sales + repairs)
+                            .build()
+            );
+        }
+
+        // ===== Last 30 Days Repair Count =====
+        List<AdvancedDashboardDto.RepairTrend> repairTrend = new ArrayList<>();
+
+        for (int i = 0; i < 30; i++) {
+            LocalDate date = start30.plusDays(i);
+            LocalDateTime start = date.atStartOfDay();
+            LocalDateTime end = date.atTime(23, 59, 59);
+
+            long repairs = repairJobRepository.findByCreatedAtBetween(start, end).size();
+
+            repairTrend.add(
+                    AdvancedDashboardDto.RepairTrend.builder()
+                            .date(date.toString())
+                            .repairs(repairs)
+                            .build()
+            );
+        }
+
+        return AdvancedDashboardDto.builder()
+                .last30DaysRevenue(revenueTrend)
+                .last6MonthsRevenue(monthlyTrend)
+                .last30DaysRepairs(repairTrend)
                 .build();
     }
 }

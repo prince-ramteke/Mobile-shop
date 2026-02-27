@@ -1,5 +1,6 @@
 package com.shopmanager.report.controller;
 
+import com.shopmanager.dto.report.AdvancedDashboardDto;
 import com.shopmanager.dto.report.DailyReportDto;
 import com.shopmanager.dto.report.DashboardSummaryDto;
 import com.shopmanager.dto.report.MonthlyReportDto;
@@ -62,5 +63,10 @@ public class ReportController {
             @RequestParam int month
     ) {
         return reportService.getMonthlyReport(year, month);
+    }
+
+    @GetMapping("/advanced-dashboard")
+    public AdvancedDashboardDto getAdvancedDashboard() {
+        return reportService.getAdvancedDashboard();
     }
 }
