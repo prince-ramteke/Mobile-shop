@@ -69,4 +69,9 @@ public class ReportController {
     public AdvancedDashboardDto getAdvancedDashboard() {
         return reportService.getAdvancedDashboard();
     }
+
+    @GetMapping("/advanced-dashboard-fast")
+    public AdvancedDashboardDto getAdvancedDashboardFast() {
+        return reportService.getAdvancedDashboardOptimized();
+    }
 }

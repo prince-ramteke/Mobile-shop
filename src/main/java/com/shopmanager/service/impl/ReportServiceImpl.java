@@ -500,4 +500,69 @@ public class ReportServiceImpl implements ReportService {
                 .last30DaysRepairs(repairTrend)
                 .build();
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AdvancedDashboardDto getAdvancedDashboardOptimized() {
+
+        LocalDate today = LocalDate.now();
+        LocalDate start30 = today.minusDays(29);
+
+        LocalDateTime start = start30.atStartOfDay();
+        LocalDateTime end = today.atTime(23,59,59);
+
+        Map<LocalDate, Double> revenueMap = new HashMap<>();
+        Map<LocalDate, Long> repairCountMap = new HashMap<>();
+
+        // SALES
+        List<Object[]> salesData =
+                mobileSaleRepository.getDailySalesBetween(start, end);
+
+        for (Object[] row : salesData) {
+            LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
+            Double total = row[1] != null ? ((Number) row[1]).doubleValue() : 0;
+            revenueMap.put(date, total);
+        }
+
+        // REPAIRS
+        List<Object[]> repairData =
+                repairJobRepository.getDailyRepairStatsBetween(start, end);
+
+        for (Object[] row : repairData) {
+            LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
+            Long count = row[1] != null ? ((Number) row[1]).longValue() : 0;
+            Double amount = row[2] != null ? ((Number) row[2]).doubleValue() : 0;
+
+            repairCountMap.put(date, count);
+            revenueMap.put(date,
+                    revenueMap.getOrDefault(date, 0.0) + amount);
+        }
+
+        List<AdvancedDashboardDto.RevenueTrend> revenueTrend = new ArrayList<>();
+        List<AdvancedDashboardDto.RepairTrend> repairTrend = new ArrayList<>();
+
+        for (int i = 0; i < 30; i++) {
+            LocalDate date = start30.plusDays(i);
+
+            revenueTrend.add(
+                    AdvancedDashboardDto.RevenueTrend.builder()
+                            .date(date.toString())
+                            .revenue(revenueMap.getOrDefault(date, 0.0))
+                            .build()
+            );
+
+            repairTrend.add(
+                    AdvancedDashboardDto.RepairTrend.builder()
+                            .date(date.toString())
+                            .repairs(repairCountMap.getOrDefault(date, 0L))
+                            .build()
+            );
+        }
+
+        return AdvancedDashboardDto.builder()
+                .last30DaysRevenue(revenueTrend)
+                .last30DaysRepairs(repairTrend)
+                .last6MonthsRevenue(Collections.emptyList())
+                .build();
+    }
 }

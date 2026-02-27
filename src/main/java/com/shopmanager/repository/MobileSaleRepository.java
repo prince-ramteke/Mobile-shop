@@ -31,5 +31,15 @@ ORDER BY s.createdAt DESC
 
     List<MobileSale> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
+    @Query("""
+    SELECT DATE(m.createdAt), SUM(m.totalAmount)
+    FROM MobileSale m
+    WHERE m.createdAt BETWEEN :start AND :end
+    GROUP BY DATE(m.createdAt)
+""")
+    List<Object[]> getDailySalesBetween(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 
 }

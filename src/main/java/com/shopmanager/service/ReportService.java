@@ -14,4 +14,6 @@ public interface ReportService {
     MonthlyReportDto getMonthlyReport(int year, int month);
 
     AdvancedDashboardDto getAdvancedDashboard();
+
+    AdvancedDashboardDto getAdvancedDashboardOptimized();
 }

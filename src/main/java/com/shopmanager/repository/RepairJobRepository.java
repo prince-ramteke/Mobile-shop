@@ -101,4 +101,21 @@ WHERE r.customer.id = :customerId
     java.time.LocalDateTime findLastRepairDate(@Param("customerId") Long customerId);
 
 
+    @Query("""
+    SELECT DATE(r.createdAt), COUNT(r), SUM(
+        CASE 
+            WHEN r.finalCost IS NOT NULL THEN r.finalCost
+            WHEN r.advancePaid IS NOT NULL THEN r.advancePaid
+            ELSE 0
+        END
+    )
+    FROM RepairJob r
+    WHERE r.createdAt BETWEEN :start AND :end
+    GROUP BY DATE(r.createdAt)
+""")
+    List<Object[]> getDailyRepairStatsBetween(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
 }
