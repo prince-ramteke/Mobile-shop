@@ -42,4 +42,15 @@ ORDER BY s.createdAt DESC
             @Param("end") LocalDateTime end
     );
 
+    @Query("""
+    SELECT FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m'),
+           SUM(m.totalAmount)
+    FROM MobileSale m
+    WHERE m.createdAt BETWEEN :start AND :end
+    GROUP BY FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m')
+""")
+    List<Object[]> getMonthlySalesBetween(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 }

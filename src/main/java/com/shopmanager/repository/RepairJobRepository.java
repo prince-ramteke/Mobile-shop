@@ -118,4 +118,22 @@ WHERE r.customer.id = :customerId
             @Param("end") LocalDateTime end
     );
 
+
+    @Query("""
+    SELECT FUNCTION('DATE_FORMAT', r.createdAt, '%Y-%m'),
+           SUM(
+               CASE 
+                   WHEN r.finalCost IS NOT NULL THEN r.finalCost
+                   WHEN r.advancePaid IS NOT NULL THEN r.advancePaid
+                   ELSE 0
+               END
+           )
+    FROM RepairJob r
+    WHERE r.createdAt BETWEEN :start AND :end
+    GROUP BY FUNCTION('DATE_FORMAT', r.createdAt, '%Y-%m')
+""")
+    List<Object[]> getMonthlyRepairRevenueBetween(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 }

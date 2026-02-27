@@ -514,7 +514,7 @@ public class ReportServiceImpl implements ReportService {
         Map<LocalDate, Double> revenueMap = new HashMap<>();
         Map<LocalDate, Long> repairCountMap = new HashMap<>();
 
-        // SALES
+        // ===== DAILY SALES =====
         List<Object[]> salesData =
                 mobileSaleRepository.getDailySalesBetween(start, end);
 
@@ -524,7 +524,7 @@ public class ReportServiceImpl implements ReportService {
             revenueMap.put(date, total);
         }
 
-        // REPAIRS
+        // ===== DAILY REPAIRS =====
         List<Object[]> repairData =
                 repairJobRepository.getDailyRepairStatsBetween(start, end);
 
@@ -559,10 +559,58 @@ public class ReportServiceImpl implements ReportService {
             );
         }
 
+        // ===== LAST 6 MONTHS =====
+
+        YearMonth currentMonth = YearMonth.now();
+        YearMonth startMonth = currentMonth.minusMonths(5);
+
+        LocalDateTime monthStart = startMonth.atDay(1).atStartOfDay();
+        LocalDateTime monthEnd = currentMonth.atEndOfMonth().atTime(23,59,59);
+
+        Map<String, Double> monthlyRevenueMap = new HashMap<>();
+
+        // SALES
+        List<Object[]> monthlySales =
+                mobileSaleRepository.getMonthlySalesBetween(monthStart, monthEnd);
+
+        for (Object[] row : monthlySales) {
+            String month = (String) row[0];
+            Double total = row[1] != null ? ((Number) row[1]).doubleValue() : 0;
+            monthlyRevenueMap.put(month, total);
+        }
+
+        // REPAIRS
+        List<Object[]> monthlyRepairs =
+                repairJobRepository.getMonthlyRepairRevenueBetween(monthStart, monthEnd);
+
+        for (Object[] row : monthlyRepairs) {
+            String month = (String) row[0];
+            Double total = row[1] != null ? ((Number) row[1]).doubleValue() : 0;
+
+            monthlyRevenueMap.put(
+                    month,
+                    monthlyRevenueMap.getOrDefault(month, 0.0) + total
+            );
+        }
+
+        List<AdvancedDashboardDto.MonthlyTrend> monthlyTrend = new ArrayList<>();
+
+        for (int i = 0; i < 6; i++) {
+            YearMonth ym = startMonth.plusMonths(i);
+            String monthKey = ym.toString();
+
+            monthlyTrend.add(
+                    AdvancedDashboardDto.MonthlyTrend.builder()
+                            .month(monthKey)
+                            .revenue(monthlyRevenueMap.getOrDefault(monthKey, 0.0))
+                            .build()
+            );
+        }
+
         return AdvancedDashboardDto.builder()
                 .last30DaysRevenue(revenueTrend)
                 .last30DaysRepairs(repairTrend)
-                .last6MonthsRevenue(Collections.emptyList())
+                .last6MonthsRevenue(monthlyTrend)
                 .build();
     }
 }
