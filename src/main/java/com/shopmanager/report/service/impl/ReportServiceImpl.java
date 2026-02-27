@@ -19,7 +19,7 @@ import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 
-@Service
+@Service("customReportService")
 @RequiredArgsConstructor
 public class ReportServiceImpl implements ReportService {
 

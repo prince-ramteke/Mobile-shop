@@ -10,10 +10,13 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 public interface RepairJobRepository extends JpaRepository<RepairJob, Long> {
+
+    List<RepairJob> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
     Optional<RepairJob> findByJobNumber(String jobNumber);
 
@@ -98,4 +101,39 @@ WHERE r.customer.id = :customerId
     java.time.LocalDateTime findLastRepairDate(@Param("customerId") Long customerId);
 
 
+    @Query("""
+    SELECT DATE(r.createdAt), COUNT(r), SUM(
+        CASE 
+            WHEN r.finalCost IS NOT NULL THEN r.finalCost
+            WHEN r.advancePaid IS NOT NULL THEN r.advancePaid
+            ELSE 0
+        END
+    )
+    FROM RepairJob r
+    WHERE r.createdAt BETWEEN :start AND :end
+    GROUP BY DATE(r.createdAt)
+""")
+    List<Object[]> getDailyRepairStatsBetween(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
+
+    @Query("""
+    SELECT FUNCTION('DATE_FORMAT', r.createdAt, '%Y-%m'),
+           SUM(
+               CASE 
+                   WHEN r.finalCost IS NOT NULL THEN r.finalCost
+                   WHEN r.advancePaid IS NOT NULL THEN r.advancePaid
+                   ELSE 0
+               END
+           )
+    FROM RepairJob r
+    WHERE r.createdAt BETWEEN :start AND :end
+    GROUP BY FUNCTION('DATE_FORMAT', r.createdAt, '%Y-%m')
+""")
+    List<Object[]> getMonthlyRepairRevenueBetween(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 }

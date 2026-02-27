@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -28,5 +29,28 @@ ORDER BY s.createdAt DESC
 
     List<MobileSale> findByPendingAmountGreaterThanOrderByCreatedAtDesc(BigDecimal amount);
 
+    List<MobileSale> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
+    @Query("""
+    SELECT DATE(m.createdAt), SUM(m.totalAmount)
+    FROM MobileSale m
+    WHERE m.createdAt BETWEEN :start AND :end
+    GROUP BY DATE(m.createdAt)
+""")
+    List<Object[]> getDailySalesBetween(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
+    @Query("""
+    SELECT FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m'),
+           SUM(m.totalAmount)
+    FROM MobileSale m
+    WHERE m.createdAt BETWEEN :start AND :end
+    GROUP BY FUNCTION('DATE_FORMAT', m.createdAt, '%Y-%m')
+""")
+    List<Object[]> getMonthlySalesBetween(
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
 }
