@@ -5,6 +5,7 @@ import com.shopmanager.dto.report.DailyReportDto;
 import com.shopmanager.dto.report.DashboardSummaryDto;
 import com.shopmanager.dto.report.MonthlyReportDto;
 import com.shopmanager.service.ReportExcelService;
+import com.shopmanager.service.ReportPdfService;
 import com.shopmanager.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -73,5 +74,33 @@ public class ReportController {
     @GetMapping("/advanced-dashboard-fast")
     public AdvancedDashboardDto getAdvancedDashboardFast() {
         return reportService.getAdvancedDashboardOptimized();
+    }
+
+    private final ReportPdfService reportPdfService;
+
+    @GetMapping("/export/daily-pdf")
+    public ResponseEntity<byte[]> exportDailyPdf(@RequestParam String date) {
+
+        byte[] pdf = reportPdfService.exportDailyPdf(date);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=daily-report.pdf")
+                .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
+                .body(pdf);
+    }
+
+    @GetMapping("/export/monthly-pdf")
+    public ResponseEntity<byte[]> exportMonthlyPdf(
+            @RequestParam int year,
+            @RequestParam int month) {
+
+        byte[] pdf = reportPdfService.exportMonthlyPdf(year, month);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=monthly-report.pdf")
+                .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
+                .body(pdf);
     }
 }
