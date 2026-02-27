@@ -5,6 +5,7 @@ import com.shopmanager.dto.report.DashboardSummaryDto;
 import com.shopmanager.dto.report.MonthlyReportDto;
 import com.shopmanager.entity.MobileSale;
 import com.shopmanager.entity.RepairJob;
+import com.shopmanager.repository.CustomerRepository;
 import com.shopmanager.repository.MobileSaleRepository;
 import com.shopmanager.repository.RepairJobRepository;
 import com.shopmanager.service.ReportService;
@@ -26,6 +27,8 @@ public class ReportServiceImpl implements ReportService {
     private final MobileSaleRepository mobileSaleRepository;
     private final RepairJobRepository repairJobRepository;
 
+    private final CustomerRepository customerRepository;
+
     // ================= DAILY REPORT =================
 
     @Override
@@ -38,6 +41,20 @@ public class ReportServiceImpl implements ReportService {
         LocalDateTime end = date.atTime(23, 59, 59);
 
         List<MobileSale> sales = mobileSaleRepository.findByCreatedAtBetween(start, end);
+        // ===== Load Customer Names for Sales =====
+        List<Long> customerIds = sales.stream()
+                .map(MobileSale::getCustomerId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<Long, String> customerNameMap =
+                customerRepository.findByIdIn(customerIds)
+                        .stream()
+                        .collect(Collectors.toMap(
+                                Customer::getId,
+                                Customer::getName
+                        ));
         List<RepairJob> repairs = repairJobRepository.findByCreatedAtBetween(start, end);
 
         double totalSales = sales.stream()
@@ -90,8 +107,12 @@ public class ReportServiceImpl implements ReportService {
             transactions.add(DailyReportDto.TransactionRow.builder()
                     .id(s.getId())
                     .type("Sale")
-                    .customer("Customer #" + s.getCustomerId())
-                    .amount(s.getTotalAmount() != null ? s.getTotalAmount().doubleValue() : 0)
+                    .customer(
+                            customerNameMap.getOrDefault(
+                                    s.getCustomerId(),
+                                    "Walk-in Customer"
+                            )
+                    )                    .amount(s.getTotalAmount() != null ? s.getTotalAmount().doubleValue() : 0)
                     .time(
                             s.getCreatedAt() != null
                                     ? s.getCreatedAt().toLocalTime().toString()
@@ -152,6 +173,20 @@ public class ReportServiceImpl implements ReportService {
         LocalDateTime end = ym.atEndOfMonth().atTime(23, 59, 59);
 
         List<MobileSale> sales = mobileSaleRepository.findByCreatedAtBetween(start, end);
+        // ===== Load Customer Names for Sales =====
+        List<Long> customerIds = sales.stream()
+                .map(MobileSale::getCustomerId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<Long, String> customerNameMap =
+                customerRepository.findByIdIn(customerIds)
+                        .stream()
+                        .collect(Collectors.toMap(
+                                Customer::getId,
+                                Customer::getName
+                        ));
         List<RepairJob> repairs = repairJobRepository.findByCreatedAtBetween(start, end);
 
         if (sales.isEmpty() && repairs.isEmpty()) {
@@ -261,6 +296,16 @@ public class ReportServiceImpl implements ReportService {
         }
 
 // Convert to DTO list
+        // ===== Load Real Customer Names =====
+        List<Long> topCustomerIds = customerTotals.keySet().stream().toList();
+
+        Map<Long, String> monthlyCustomerNameMap =
+                customerRepository.findByIdIn(topCustomerIds)
+                        .stream()
+                        .collect(Collectors.toMap(
+                                Customer::getId,
+                                Customer::getName
+                        ));
         List<MonthlyReportDto.TopCustomer> topCustomers =
                 customerTotals.entrySet()
                         .stream()
@@ -268,8 +313,12 @@ public class ReportServiceImpl implements ReportService {
                         .limit(5)
                         .map(entry -> MonthlyReportDto.TopCustomer.builder()
                                 .customerId(entry.getKey())
-                                .name("Customer #" + entry.getKey())
-                                .totalSpent(entry.getValue())
+                                .name(
+                                        monthlyCustomerNameMap.getOrDefault(
+                                                entry.getKey(),
+                                                "Walk-in Customer"
+                                        )
+                                )                                .totalSpent(entry.getValue())
                                 .build())
                         .collect(Collectors.toList());
 
