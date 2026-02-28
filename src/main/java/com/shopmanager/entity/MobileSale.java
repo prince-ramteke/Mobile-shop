@@ -31,8 +31,8 @@ public class MobileSale {
     private Integer quantity;
 
     private BigDecimal price;
-    private BigDecimal totalAmount;
-
+    @Column(name = "grand_total")
+    private BigDecimal grandTotal;
     private BigDecimal advancePaid;
     private BigDecimal pendingAmount;
 
@@ -52,8 +52,8 @@ public class MobileSale {
     @Transient
     private String customerAddress;
 
+    @Builder.Default
     private Boolean emiEnabled = false;
-
     private Integer emiMonths;
 
     private Double emiInterestRate;

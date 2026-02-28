@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -60,7 +59,7 @@ public class MobileSaleServiceImpl implements MobileSaleService {
                             .imei2(sale.getImei2())
                             .quantity(sale.getQuantity())
                             .price(sale.getPrice())
-                            .totalAmount(sale.getTotalAmount())
+                            .totalAmount(sale.getGrandTotal())
                             .advancePaid(sale.getAdvancePaid())
                             .pendingAmount(sale.getPendingAmount())
                             .warrantyYears(sale.getWarrantyYears())
@@ -102,7 +101,7 @@ public class MobileSaleServiceImpl implements MobileSaleService {
                             .imei2(sale.getImei2())
                             .quantity(sale.getQuantity())
                             .price(sale.getPrice())
-                            .totalAmount(sale.getTotalAmount())
+                            .totalAmount(sale.getGrandTotal())
                             .advancePaid(sale.getAdvancePaid())
                             .pendingAmount(sale.getPendingAmount())
                             .warrantyYears(sale.getWarrantyYears())
@@ -144,7 +143,7 @@ public class MobileSaleServiceImpl implements MobileSaleService {
                 .imei2(sale.getImei2())
                 .quantity(sale.getQuantity())
                 .price(sale.getPrice())
-                .totalAmount(sale.getTotalAmount())
+                .totalAmount(sale.getGrandTotal())
                 .advancePaid(sale.getAdvancePaid())
                 .pendingAmount(sale.getPendingAmount())
                 .warrantyYears(sale.getWarrantyYears())
@@ -226,7 +225,7 @@ public class MobileSaleServiceImpl implements MobileSaleService {
                 .imei2(req.getImei2())
                 .quantity(req.getQuantity())
                 .price(req.getPrice())
-                .totalAmount(total)
+                .grandTotal(total)
                 .advancePaid(req.getAdvancePaid())
                 .pendingAmount(pending)
                 .warrantyYears(req.getWarrantyYears())
@@ -339,7 +338,7 @@ public class MobileSaleServiceImpl implements MobileSaleService {
         sale.setImei2(req.getImei2());
         sale.setQuantity(req.getQuantity());
         sale.setPrice(req.getPrice());
-        sale.setTotalAmount(total);
+        sale.setGrandTotal(total);
         sale.setAdvancePaid(req.getAdvancePaid());
         sale.setPendingAmount(pending);
         sale.setWarrantyYears(req.getWarrantyYears());
@@ -380,7 +379,7 @@ public class MobileSaleServiceImpl implements MobileSaleService {
 
         for (MobileSale sale : sales) {
 
-            double total = sale.getTotalAmount().doubleValue();
+            double total = sale.getGrandTotal().doubleValue();
             balance += total;
 
             rows.add(CustomerLedgerRow.builder()
