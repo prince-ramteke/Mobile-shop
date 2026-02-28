@@ -6,9 +6,11 @@ import com.shopmanager.dto.report.DashboardSummaryDto;
 import com.shopmanager.dto.report.MonthlyReportDto;
 import com.shopmanager.entity.MobileSale;
 import com.shopmanager.entity.RepairJob;
+import com.shopmanager.entity.Sale;
 import com.shopmanager.repository.CustomerRepository;
 import com.shopmanager.repository.MobileSaleRepository;
 import com.shopmanager.repository.RepairJobRepository;
+import com.shopmanager.repository.SaleRepository;
 import com.shopmanager.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,7 @@ public class ReportServiceImpl implements ReportService {
     private final RepairJobRepository repairJobRepository;
 
     private final CustomerRepository customerRepository;
+    private final SaleRepository saleRepository;
 
     // ================= DAILY REPORT =================
 
@@ -42,7 +45,8 @@ public class ReportServiceImpl implements ReportService {
         LocalDateTime end = date.atTime(23, 59, 59);
 
         List<MobileSale> sales = mobileSaleRepository.findByCreatedAtBetween(start, end);
-        // ===== Load Customer Names for Sales =====
+        List<Sale> normalSales =
+                saleRepository.findBySaleDateBetween(date, date);        // ===== Load Customer Names for Sales =====
         List<Long> customerIds = sales.stream()
                 .map(MobileSale::getCustomerId)
                 .filter(Objects::nonNull)
@@ -58,8 +62,15 @@ public class ReportServiceImpl implements ReportService {
                         ));
         List<RepairJob> repairs = repairJobRepository.findByCreatedAtBetween(start, end);
 
-        double totalSales = sales.stream()
-                .mapToDouble(s -> s.getTotalAmount() != null ? s.getTotalAmount().doubleValue() : 0)                .sum();
+        double mobileSalesTotal = sales.stream()
+                .mapToDouble(s -> s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
+                .sum();
+
+        double normalSalesTotal = normalSales.stream()
+                .mapToDouble(s -> s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
+                .sum();
+
+        double totalSales = mobileSalesTotal + normalSalesTotal;
 
         double totalRevenue = totalSales +
                 repairs.stream()
@@ -89,7 +100,8 @@ public class ReportServiceImpl implements ReportService {
             if (s.getCreatedAt() == null) continue;
             int hour = s.getCreatedAt().getHour();
             hourlySales.put(hour,
-                    hourlySales.getOrDefault(hour, 0.0) + s.getTotalAmount().doubleValue());
+                    hourlySales.getOrDefault(hour, 0.0)
+                            + (s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0));
         }
 
         List<DailyReportDto.HourlyData> hourlyData = new ArrayList<>();
@@ -113,12 +125,34 @@ public class ReportServiceImpl implements ReportService {
                                     s.getCustomerId(),
                                     "Walk-in Customer"
                             )
-                    )                    .amount(s.getTotalAmount() != null ? s.getTotalAmount().doubleValue() : 0)
+                    )                    .amount(s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
                     .time(
                             s.getCreatedAt() != null
                                     ? s.getCreatedAt().toLocalTime().toString()
                                     : "00:00"
                     )                    .build());
+        }
+        // ---- Add Normal Sales ----
+        for (Sale s : normalSales) {
+            transactions.add(DailyReportDto.TransactionRow.builder()
+                    .id(s.getId())
+                    .type("Sale")
+                    .customer(
+                            s.getCustomer() != null
+                                    ? s.getCustomer().getName()
+                                    : "Walk-in Customer"
+                    )
+                    .amount(
+                            s.getGrandTotal() != null
+                                    ? s.getGrandTotal().doubleValue()
+                                    : 0
+                    )
+                    .time(
+                            s.getCreatedAt() != null
+                                    ? s.getCreatedAt().toLocalTime().toString()
+                                    : "00:00"
+                    )
+                    .build());
         }
 
 // ---- Add Repairs ----
@@ -174,7 +208,12 @@ public class ReportServiceImpl implements ReportService {
         LocalDateTime end = ym.atEndOfMonth().atTime(23, 59, 59);
 
         List<MobileSale> sales = mobileSaleRepository.findByCreatedAtBetween(start, end);
-        // ===== Load Customer Names for Sales =====
+
+        List<Sale> normalSales =
+                saleRepository.findBySaleDateBetween(
+                        ym.atDay(1),
+                        ym.atEndOfMonth()
+                );        // ===== Load Customer Names for Sales =====
         List<Long> customerIds = sales.stream()
                 .map(MobileSale::getCustomerId)
                 .filter(Objects::nonNull)
@@ -204,8 +243,15 @@ public class ReportServiceImpl implements ReportService {
                     .build();
         }
 
-        double totalSales = sales.stream()
-                .mapToDouble(s -> s.getTotalAmount() != null ? s.getTotalAmount().doubleValue() : 0)                .sum();
+        double mobileSalesTotal = sales.stream()
+                .mapToDouble(s -> s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
+                .sum();
+
+        double normalSalesTotal = normalSales.stream()
+                .mapToDouble(s -> s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
+                .sum();
+
+        double totalSales = mobileSalesTotal + normalSalesTotal;
 
         double totalRevenue = totalSales +
                 repairs.stream()
@@ -237,7 +283,20 @@ public class ReportServiceImpl implements ReportService {
             if (s.getCreatedAt() == null) continue;
             int day = s.getCreatedAt().getDayOfMonth();
             dailySales.put(day,
-                    dailySales.getOrDefault(day, 0.0) + s.getTotalAmount().doubleValue());
+                    dailySales.getOrDefault(day, 0.0)
+                            + (s.getGrandTotal() != null
+                            ? s.getGrandTotal().doubleValue()
+                            : 0));
+        }
+
+        for (Sale s : normalSales) {
+            if (s.getSaleDate() == null) continue;
+            int day = s.getSaleDate().getDayOfMonth();
+            dailySales.put(day,
+                    dailySales.getOrDefault(day, 0.0)
+                            + (s.getGrandTotal() != null
+                            ? s.getGrandTotal().doubleValue()
+                            : 0));
         }
 
         List<MonthlyReportDto.DailyData> dailyData = new ArrayList<>();
@@ -253,10 +312,19 @@ public class ReportServiceImpl implements ReportService {
         LocalDateTime prevStart = prev.atDay(1).atStartOfDay();
         LocalDateTime prevEnd = prev.atEndOfMonth().atTime(23, 59, 59);
 
-        double prevSales = mobileSaleRepository.findByCreatedAtBetween(prevStart, prevEnd)
+        double prevMobileSales = mobileSaleRepository
+                .findByCreatedAtBetween(prevStart, prevEnd)
                 .stream()
-                .mapToDouble(s -> s.getTotalAmount() != null ? s.getTotalAmount().doubleValue() : 0)
+                .mapToDouble(s -> s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
                 .sum();
+
+        double prevNormalSales = saleRepository
+                .findBySaleDateBetween(prev.atDay(1), prev.atEndOfMonth())
+                .stream()
+                .mapToDouble(s -> s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
+                .sum();
+
+        double prevSales = prevMobileSales + prevNormalSales;
 
         double growth = prevSales > 0
                 ? Math.round((((totalSales - prevSales) / prevSales) * 100) * 100.0) / 100.0
@@ -269,8 +337,8 @@ public class ReportServiceImpl implements ReportService {
         for (MobileSale s : sales) {
             if (s.getCustomerId() == null) continue;
 
-            double amount = s.getTotalAmount() != null
-                    ? s.getTotalAmount().doubleValue()
+            double amount = s.getGrandTotal() != null
+                    ? s.getGrandTotal().doubleValue()
                     : 0;
 
             customerTotals.put(
@@ -346,10 +414,18 @@ public class ReportServiceImpl implements ReportService {
         // TODAY SALES + REPAIRS
         List<MobileSale> todaySalesList = mobileSaleRepository.findByCreatedAtBetween(startDay, endDay);
         List<RepairJob> todayRepairsList = repairJobRepository.findByCreatedAtBetween(startDay, endDay);
+        List<Sale> todayNormalSalesList =
+                saleRepository.findBySaleDateBetween(today, today);
 
-        double todaySales = todaySalesList.stream()
-                .mapToDouble(s -> s.getTotalAmount() != null ? s.getTotalAmount().doubleValue() : 0)
+        double mobileSalesToday = todaySalesList.stream()
+                .mapToDouble(s -> s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
                 .sum();
+
+        double normalSalesToday = todayNormalSalesList.stream()
+                .mapToDouble(s -> s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
+                .sum();
+
+        double todaySales = mobileSalesToday + normalSalesToday;
 
         double todayRepairRevenue = todayRepairsList.stream()
                 .mapToDouble(r -> {
@@ -367,10 +443,18 @@ public class ReportServiceImpl implements ReportService {
         LocalDateTime startMonth = ym.atDay(1).atStartOfDay();
         LocalDateTime endMonth = ym.atEndOfMonth().atTime(23,59,59);
 
-        double monthSales = mobileSaleRepository.findByCreatedAtBetween(startMonth, endMonth)
+        double mobileMonthSales = mobileSaleRepository.findByCreatedAtBetween(startMonth, endMonth)
                 .stream()
-                .mapToDouble(s -> s.getTotalAmount() != null ? s.getTotalAmount().doubleValue() : 0)
+                .mapToDouble(s -> s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
                 .sum();
+
+        double normalMonthSales = saleRepository
+                .findBySaleDateBetween(ym.atDay(1), ym.atEndOfMonth())
+                .stream()
+                .mapToDouble(s -> s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
+                .sum();
+
+        double monthSales = mobileMonthSales + normalMonthSales;
 
         double monthRepairs = repairJobRepository.findByCreatedAtBetween(startMonth, endMonth)
                 .stream()
@@ -392,13 +476,22 @@ public class ReportServiceImpl implements ReportService {
         LocalDateTime prevStart = prev.atDay(1).atStartOfDay();
         LocalDateTime prevEnd = prev.atEndOfMonth().atTime(23,59,59);
 
-        double prevMonthSales = mobileSaleRepository.findByCreatedAtBetween(prevStart, prevEnd)
+        double prevMobileSales = mobileSaleRepository
+                .findByCreatedAtBetween(prevStart, prevEnd)
                 .stream()
-                .mapToDouble(s -> s.getTotalAmount() != null ? s.getTotalAmount().doubleValue() : 0)
+                .mapToDouble(s -> s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
                 .sum();
 
-        double growth = prevMonthSales > 0
-                ? Math.round(((monthSales - prevMonthSales) / prevMonthSales) * 100 * 100.0) / 100.0
+        double prevNormalSales = saleRepository
+                .findBySaleDateBetween(prev.atDay(1), prev.atEndOfMonth())
+                .stream()
+                .mapToDouble(s -> s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
+                .sum();
+
+        double prevTotalSales = prevMobileSales + prevNormalSales;
+
+        double growth = prevTotalSales > 0
+                ? Math.round(((monthSales - prevTotalSales) / prevTotalSales) * 100 * 100.0) / 100.0
                 : 0;
 
         return DashboardSummaryDto.builder()
@@ -426,10 +519,18 @@ public class ReportServiceImpl implements ReportService {
             LocalDateTime start = date.atStartOfDay();
             LocalDateTime end = date.atTime(23, 59, 59);
 
-            double sales = mobileSaleRepository.findByCreatedAtBetween(start, end)
+            double mobileSales = mobileSaleRepository.findByCreatedAtBetween(start, end)
                     .stream()
-                    .mapToDouble(s -> s.getTotalAmount() != null ? s.getTotalAmount().doubleValue() : 0)
+                    .mapToDouble(s -> s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
                     .sum();
+
+            double normalSales = saleRepository
+                    .findBySaleDateBetween(date, date)
+                    .stream()
+                    .mapToDouble(s -> s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
+                    .sum();
+
+            double sales = mobileSales + normalSales;
 
             double repairs = repairJobRepository.findByCreatedAtBetween(start, end)
                     .stream()
@@ -455,10 +556,18 @@ public class ReportServiceImpl implements ReportService {
             LocalDateTime start = ym.atDay(1).atStartOfDay();
             LocalDateTime end = ym.atEndOfMonth().atTime(23, 59, 59);
 
-            double sales = mobileSaleRepository.findByCreatedAtBetween(start, end)
+            double mobileSales = mobileSaleRepository.findByCreatedAtBetween(start, end)
                     .stream()
-                    .mapToDouble(s -> s.getTotalAmount() != null ? s.getTotalAmount().doubleValue() : 0)
+                    .mapToDouble(s -> s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
                     .sum();
+
+            double normalSales = saleRepository
+                    .findBySaleDateBetween(ym.atDay(1), ym.atEndOfMonth())
+                    .stream()
+                    .mapToDouble(s -> s.getGrandTotal() != null ? s.getGrandTotal().doubleValue() : 0)
+                    .sum();
+
+            double sales = mobileSales + normalSales;
 
             double repairs = repairJobRepository.findByCreatedAtBetween(start, end)
                     .stream()
@@ -518,10 +627,29 @@ public class ReportServiceImpl implements ReportService {
         List<Object[]> salesData =
                 mobileSaleRepository.getDailySalesBetween(start, end);
 
+        List<Object[]> normalSalesData =
+                saleRepository.getDailyNormalSalesBetween(start.toLocalDate(), end.toLocalDate());
+
+        // ===== MOBILE SALES =====
         for (Object[] row : salesData) {
             LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
             Double total = row[1] != null ? ((Number) row[1]).doubleValue() : 0;
-            revenueMap.put(date, total);
+
+            revenueMap.put(
+                    date,
+                    revenueMap.getOrDefault(date, 0.0) + total
+            );
+        }
+
+// ===== NORMAL SALES =====
+        for (Object[] row : normalSalesData) {
+            LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
+            Double total = row[1] != null ? ((Number) row[1]).doubleValue() : 0;
+
+            revenueMap.put(
+                    date,
+                    revenueMap.getOrDefault(date, 0.0) + total
+            );
         }
 
         // ===== DAILY REPAIRS =====

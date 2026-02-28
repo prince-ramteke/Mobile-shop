@@ -14,6 +14,17 @@ import java.util.Optional;
 
 public interface SaleRepository extends JpaRepository<Sale, Long> {
 
+    @Query("""
+SELECT DATE(s.saleDate), COALESCE(SUM(s.grandTotal),0)
+FROM Sale s
+WHERE s.saleDate BETWEEN :start AND :end
+GROUP BY DATE(s.saleDate)
+""")
+    List<Object[]> getDailyNormalSalesBetween(
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end
+    );
+
     // --------------------------------
     // SALES LISTING
     // --------------------------------
@@ -157,5 +168,7 @@ WHERE s.customer.id = :customerId
 
 
     Optional<Sale> findByInvoiceNumber(String invoiceNumber);
+
+    List<Sale> findBySaleDateBetween(LocalDate start, LocalDate end);
 
 }

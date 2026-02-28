@@ -65,7 +65,7 @@ public interface ReportRepository extends JpaRepository<Sale, Long> {
     Double getDailySalesTotal(LocalDate date);
 
     @Query("""
-   SELECT COALESCE(SUM(m.totalAmount), 0)
+   SELECT COALESCE(SUM(m.grandTotal), 0)
    FROM MobileSale m
    WHERE DATE(m.createdAt) = :date
 """)

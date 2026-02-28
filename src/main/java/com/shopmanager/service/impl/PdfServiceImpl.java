@@ -56,7 +56,7 @@ public class PdfServiceImpl implements PdfService {
         ctx.setVariable("qty", sale.getQuantity());
 
         ctx.setVariable("price", sale.getPrice());
-        ctx.setVariable("total", sale.getTotalAmount());
+        ctx.setVariable("total", sale.getGrandTotal());
         ctx.setVariable("advance", sale.getAdvancePaid());
         ctx.setVariable("pending", sale.getPendingAmount());
 
