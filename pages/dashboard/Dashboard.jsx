@@ -52,7 +52,7 @@ const Dashboard = () => {
             ]);
 
             setStats(dashboardData);
-            setRevenueData(revenue || generateDemoRevenueData());
+            setRevenueData(revenue || []);
             setRecentActivities(activities || []);
 
             // Set repair status data from dashboard
@@ -64,36 +64,16 @@ const Dashboard = () => {
                 ]);
             }
         } catch (error) {
-            console.error('Failed to load dashboard data:', error);
-            // Set demo data for display
-            setStats({
-                todaySales: 15420,
-                todayRepairs: 8,
-                totalCustomers: 1250,
-                pendingDues: 45680,
-                salesGrowth: 12.5,
-                repairsGrowth: -5.2,
-            });
-            setRevenueData(generateDemoRevenueData());
-            setRepairStatusData([
-                { name: 'Pending', value: 12, color: '#f59e0b' },
-                { name: 'In Progress', value: 8, color: '#3b82f6' },
-                { name: 'Completed', value: 25, color: '#10b981' },
-            ]);
-        } finally {
+    console.error('Failed to load dashboard data:', error);
+    setStats(null);
+    setRevenueData([]);
+    setRepairStatusData([]);
+    setRecentActivities([]);
+} finally {
             setLoading(false);
         }
     };
 
-    // Generate demo revenue data
-    const generateDemoRevenueData = () => {
-        const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        return days.map(day => ({
-            name: day,
-            sales: Math.floor(Math.random() * 20000) + 5000,
-            repairs: Math.floor(Math.random() * 10) + 2,
-        }));
-    };
 
     // Stat card component
     const StatCard = ({ title, value, prefix, suffix, icon, trend, trendValue, color, onClick }) => (
