@@ -27,6 +27,7 @@ import {
 import CustomerAutocomplete from '../../components/customers/CustomerAutocomplete';
 import saleService from '../../api/saleService';
 import customerService from '../../api/customerService';
+import settingsService from '../../api/settingsService';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -47,8 +48,7 @@ const CreateSale = () => {
     const [itemQty, setItemQty] = useState(1);
     const [itemPrice, setItemPrice] = useState(null);
     
-    const [gstPercentage] = useState(18);
-    const [receivedAmount, setReceivedAmount] = useState(0);
+const [gstPercentage, setGstPercentage] = useState(0);    const [receivedAmount, setReceivedAmount] = useState(0);
     const [paymentMethod, setPaymentMethod] = useState('CASH');
 
     const [totals, setTotals] = useState({
@@ -58,7 +58,19 @@ const CreateSale = () => {
         grandTotal: 0,
         pendingAmount: 0,
     });
+useEffect(() => {
+    loadSettings();
+}, []);
 
+const loadSettings = async () => {
+    try {
+        const data = await settingsService.getSettings();
+        setGstPercentage(Number(data.gstPercentage) || 0);
+    } catch (err) {
+        console.error("Failed to load GST settings", err);
+        setGstPercentage(0);
+    }
+};
     useEffect(() => {
         const subtotal = items.reduce(
     (sum, item) => sum + (Number(item.total) || 0),
@@ -170,7 +182,6 @@ const newItem = {
 })),
 
 
-                gstRate: Number(gstPercentage),
                 gstType: 'CGST_SGST',
                 amountReceived: Number(receivedAmount),
                 paymentMode: String(paymentMethod),
