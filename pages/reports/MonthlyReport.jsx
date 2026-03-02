@@ -37,8 +37,21 @@ const MonthlyReport = () => {
     const loadReport = async () => {
         try {
             setLoading(true);
-            const data = await reportService.getMonthlyReport(month.year(), month.month() + 1);
-            setReport(data);
+            const data = await reportService.getMonthlyReport(
+    month.year(),
+    month.month() + 1
+);
+
+// Map backend response safely
+const formattedData = {
+    ...data,
+    dailyData: (data.dailyData || data.dailyRevenue || []).map(item => ({
+        day: item.day,
+        sales: item.sales ?? item.revenue ?? 0,
+    }))
+};
+
+setReport(formattedData);
         } catch (error) {
             console.error('Failed to load report:', error);
             // Demo data
