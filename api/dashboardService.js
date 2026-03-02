@@ -41,36 +41,24 @@ const dashboardService = {
 
     // Get revenue chart data
     getRevenueChartData: async (period = 'week') => {
-        const response = await axiosClient.get('/api/reports/revenue-trend', {
-            params: { days: period === 'week' ? 7 : period === 'month' ? 30 : 365 }
-        });
-        const data = response.data || [];
-        // Transform to chart format
-        return data.map(item => ({
-            name: new Date(item.date).toLocaleDateString('en-US', { weekday: 'short' }),
-            value: item.amount || 0
-        }));
+    const response = await axiosClient.get('/api/dashboard/revenue-chart', {
+        params: { period }
+    });
+
+    const data = response.data || [];
+
+    return data.map(item => ({
+        name: item.name,
+        sales: item.value || 0
+    }));
+
     },
 
     // Get repair status distribution
-    getRepairStatusDistribution: async () => {
-        const response = await axiosClient.get('/api/repairs/search', {
-            params: { query: '', page: 0, size: 1000 }
-        });
-        const repairs = response.data?.content || [];
-        
-        // Count by status
-        const counts = repairs.reduce((acc, repair) => {
-            acc[repair.status] = (acc[repair.status] || 0) + 1;
-            return acc;
-        }, {});
-        
-        return [
-            { name: 'Pending', value: counts.PENDING || 0 },
-            { name: 'In Progress', value: counts.IN_PROGRESS || 0 },
-            { name: 'Completed', value: counts.COMPLETED || 0 },
-        ];
-    },
+   getRepairStatusDistribution: async () => {
+    const response = await axiosClient.get('/api/dashboard/repair-status');
+    return response.data;
+},
 
     // Get top customers
     getTopCustomers: async (limit = 5) => {
