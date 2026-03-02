@@ -8,7 +8,7 @@ import lombok.Data;
 public class ShopSettingsResponse {
 
     private Long id;
-
+    private Double gstPercentage;
     private String shopName;
     private String shopPhone;
     private String shopAddress;
@@ -16,8 +16,6 @@ public class ShopSettingsResponse {
     private String invoiceFooter;
 
     private Boolean whatsappEnabled;
-    private Boolean smsEnabled;
-    private Boolean emailEnabled;
 
     private Integer reminderGapDays;
 }
