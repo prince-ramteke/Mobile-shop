@@ -12,6 +12,9 @@ import com.shopmanager.repository.CustomerRepository;
 import com.shopmanager.repository.MessageLogRepository;
 import com.shopmanager.repository.SaleRepository;
 import com.shopmanager.service.*;
+import com.shopmanager.settings.dto.ShopSettingsResponse;
+import com.shopmanager.settings.entity.ShopSettings;
+import com.shopmanager.settings.service.ShopSettingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -36,6 +39,7 @@ public class SaleServiceImpl implements SaleService {
     private final PdfService pdfService;
     private final NotificationService notificationService;
     private final DueService dueService;
+    private final ShopSettingsService settingsService;
 
     // =====================================================
     // CREATE SALE - WITH VALIDATION FIXES
@@ -66,9 +70,14 @@ public class SaleServiceImpl implements SaleService {
         );
 
         // ✅ FIX: Ensure GST rate is BigDecimal
-        BigDecimal gstRate = request.getGstRate() != null
-                ? request.getGstRate()
-                : new BigDecimal("18");
+        // 🔥 Load GST from Settings table
+        // 🔥 Load GST from Settings table
+        ShopSettingsResponse settings = settingsService.getSettings();
+
+        BigDecimal gstRate = settings.getGstPercentage() != null
+                ? BigDecimal.valueOf(settings.getGstPercentage())
+                : BigDecimal.ZERO;
+
         sale.setGstRate(gstRate);
 
         sale.setGstType(request.getGstType() != null ? request.getGstType() : GstType.CGST_SGST);

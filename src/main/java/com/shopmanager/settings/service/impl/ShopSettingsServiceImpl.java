@@ -4,6 +4,7 @@ import com.shopmanager.settings.dto.ShopSettingsRequest;
 import com.shopmanager.settings.dto.ShopSettingsResponse;
 import com.shopmanager.settings.entity.ShopSettings;
 import com.shopmanager.settings.repository.ShopSettingsRepository;
+import com.shopmanager.settings.service.SettingsProvider;
 import com.shopmanager.settings.service.ShopSettingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class ShopSettingsServiceImpl implements ShopSettingsService {
 
+    private final SettingsProvider settingsProvider;
     private final ShopSettingsRepository repository;
 
     @Override
@@ -41,10 +43,14 @@ public class ShopSettingsServiceImpl implements ShopSettingsService {
         settings.setGstNumber(req.getGstNumber());
         settings.setInvoiceFooter(req.getInvoiceFooter());
 
-        settings.setWhatsappEnabled(req.getWhatsappEnabled());
-        settings.setSmsEnabled(req.getSmsEnabled());
-        settings.setEmailEnabled(req.getEmailEnabled());
-        settings.setReminderGapDays(req.getReminderGapDays());
+        if (req.getGstPercentage() != null)
+            settings.setGstPercentage(req.getGstPercentage());
+
+        settings.setWhatsappEnabled(
+                req.getWhatsappEnabled() != null ? req.getWhatsappEnabled() : false);
+
+        settings.setReminderGapDays(
+                req.getReminderGapDays() != null ? req.getReminderGapDays() : 3);
 
         ShopSettings saved = repository.save(settings);
 
@@ -56,10 +62,9 @@ public class ShopSettingsServiceImpl implements ShopSettingsService {
     private ShopSettings createDefault() {
         return repository.save(
                 ShopSettings.builder()
-                        .shopName("My Mobile Shop")
+                        .shopName("Saurabh Mobile Shop")
+                        .gstPercentage(18.0)
                         .whatsappEnabled(true)
-                        .smsEnabled(false)
-                        .emailEnabled(false)
                         .reminderGapDays(3)
                         .build()
         );
@@ -68,14 +73,13 @@ public class ShopSettingsServiceImpl implements ShopSettingsService {
     private ShopSettingsResponse toResponse(ShopSettings s) {
         return ShopSettingsResponse.builder()
                 .id(s.getId())
+                .gstPercentage(s.getGstPercentage())   // ADD THIS
                 .shopName(s.getShopName())
                 .shopPhone(s.getShopPhone())
                 .shopAddress(s.getShopAddress())
                 .gstNumber(s.getGstNumber())
                 .invoiceFooter(s.getInvoiceFooter())
                 .whatsappEnabled(s.getWhatsappEnabled())
-                .smsEnabled(s.getSmsEnabled())
-                .emailEnabled(s.getEmailEnabled())
                 .reminderGapDays(s.getReminderGapDays())
                 .build();
     }

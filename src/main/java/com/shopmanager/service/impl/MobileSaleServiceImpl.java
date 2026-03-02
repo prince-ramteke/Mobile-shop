@@ -10,6 +10,7 @@ import com.shopmanager.repository.MobileSaleRepository;
 import com.shopmanager.service.MobileSaleService;
 import com.shopmanager.service.PdfService;
 import com.shopmanager.service.WhatsAppService;
+import com.shopmanager.settings.service.SettingsProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.shopmanager.entity.MobileSaleRecovery;
@@ -25,7 +26,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class MobileSaleServiceImpl implements MobileSaleService {
-
+    private final SettingsProvider settingsProvider;
     private final PdfService pdfService;
 
     private final MobileSaleRepository saleRepository;
@@ -182,7 +183,17 @@ public class MobileSaleServiceImpl implements MobileSaleService {
                     return customerRepository.save(c);
                 });
 
-        BigDecimal total = req.getPrice().multiply(BigDecimal.valueOf(req.getQuantity()));
+        BigDecimal baseTotal = req.getPrice()
+                .multiply(BigDecimal.valueOf(req.getQuantity()));
+
+        Double gstPercent = settingsProvider.getGstPercentage();
+
+        BigDecimal gstAmount = baseTotal
+                .multiply(BigDecimal.valueOf(gstPercent))
+                .divide(BigDecimal.valueOf(100), 2, BigDecimal.ROUND_HALF_UP);
+
+        BigDecimal total = baseTotal.add(gstAmount);
+
         BigDecimal pending = total.subtract(req.getAdvancePaid());
 
         if (pending.compareTo(BigDecimal.ZERO) < 0) {
@@ -307,9 +318,21 @@ public class MobileSaleServiceImpl implements MobileSaleService {
                     return customerRepository.save(c);
                 });
 
-        BigDecimal total = req.getPrice().multiply(BigDecimal.valueOf(req.getQuantity()));
+        BigDecimal baseTotal = req.getPrice()
+                .multiply(BigDecimal.valueOf(req.getQuantity()));
+
+        Double gstPercent = settingsProvider.getGstPercentage();
+
+        BigDecimal gstAmount = baseTotal
+                .multiply(BigDecimal.valueOf(gstPercent))
+                .divide(BigDecimal.valueOf(100), 2, BigDecimal.ROUND_HALF_UP);
+
+        BigDecimal total = baseTotal.add(gstAmount);
+
         BigDecimal pending = total.subtract(req.getAdvancePaid());
-        if (pending.compareTo(BigDecimal.ZERO) < 0) pending = BigDecimal.ZERO;
+
+        if (pending.compareTo(BigDecimal.ZERO) < 0)
+            pending = BigDecimal.ZERO;
 
         Boolean emi = Boolean.TRUE.equals(req.getEmiEnabled());
 

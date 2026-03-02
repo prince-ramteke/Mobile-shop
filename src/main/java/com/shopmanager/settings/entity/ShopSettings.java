@@ -30,13 +30,12 @@ public class ShopSettings {
     @Column(nullable = false)
     private Boolean whatsappEnabled;
 
-    @Column(nullable = false)
-    private Boolean smsEnabled;
 
-    @Column(nullable = false)
-    private Boolean emailEnabled;
 
     // ---- Reminder ----
     @Column(nullable = false)
     private Integer reminderGapDays;
+
+    @Column(nullable = false)
+    private Double gstPercentage;
 }
