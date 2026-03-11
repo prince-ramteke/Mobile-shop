@@ -66,7 +66,16 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/mobile-sales/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/mobile-sales/**").authenticated()
 
-
+                        .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/favicon.ico",
+                                "/assets/**",
+                                "/static/**",
+                                "/*.js",
+                                "/*.css",
+                                "/api/auth/**"
+                        ).permitAll()
 
 
 
@@ -77,6 +86,7 @@ public class SecurityConfig {
                         // Dev / H2
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+
 
                         // 🔒 All other APIs need login
                         .anyRequest().authenticated()
