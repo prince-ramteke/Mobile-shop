@@ -83,7 +83,7 @@ const saleService = {
     },
 
     // Calculate totals for items
-    calculateTotals: (items, gstPercentage = 18) => {
+    calculateTotals: (items, gstPercentage = 0) => {
         const subtotal = items.reduce((sum, item) => {
             return sum + (item.quantity * item.price);
         }, 0);

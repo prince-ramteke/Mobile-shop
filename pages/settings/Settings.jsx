@@ -48,17 +48,16 @@ const Settings = () => {
         } catch (error) {
             console.error('Failed to load settings:', error);
             // Default values
-            form.setFieldsValue({
-                shopName: 'Saurabh Mobile Shop',
-                phone: '9876543210',
-                address: 'Main Market, City',
-                gstNumber: '',
-                gstPercentage: 18,
-                invoiceFooter: 'Thank you for your business!',
-                whatsappEnabled: true,
-                autoReminders: true,
-                reminderDays: 7,
-            });
+           form.setFieldsValue({
+    shopName: 'Saurabh Mobile Shop',
+    shopPhone: '9876543210',
+    shopAddress: 'Main Market, City',
+    gstNumber: '',
+    gstPercentage: 18,
+    invoiceFooter: 'Thank you for your business!',
+    whatsappEnabled: true,
+    reminderGapDays: 3,
+});
         } finally {
             setLoading(false);
         }
@@ -77,15 +76,6 @@ const Settings = () => {
         }
     };
 
-    const handleTestWhatsApp = async () => {
-        try {
-            await settingsService.testWhatsAppConnection();
-            message.success('WhatsApp connection successful!');
-        } catch (error) {
-            console.error('WhatsApp test failed:', error);
-            message.error('WhatsApp connection failed');
-        }
-    };
 
     if (!isAdmin()) {
         return (
@@ -122,7 +112,7 @@ const Settings = () => {
                     </Col>
                     <Col span={12}>
                         <Form.Item
-                            name="phone"
+                            name="shopPhone"
                             label="Phone Number"
                             rules={[{ required: true }]}
                         >
@@ -130,7 +120,7 @@ const Settings = () => {
                         </Form.Item>
                     </Col>
                     <Col span={24}>
-                        <Form.Item name="address" label="Address">
+                        <Form.Item name="shopAddress" label="Address">
                             <TextArea rows={2} placeholder="Enter shop address" />
                         </Form.Item>
                     </Col>
@@ -210,14 +200,7 @@ const Settings = () => {
             ),
             children: (
                 <Row gutter={24}>
-                    <Col span={24}>
-                        <Form.Item
-                            name="invoiceHeader"
-                            label="Invoice Header Text"
-                        >
-                            <Input placeholder="Custom header text for invoices" />
-                        </Form.Item>
-                    </Col>
+                   
                     <Col span={24}>
                         <Form.Item
                             name="invoiceFooter"
@@ -229,22 +212,8 @@ const Settings = () => {
                             />
                         </Form.Item>
                     </Col>
-                    <Col span={12}>
-                        <Form.Item
-                            name="invoicePrefix"
-                            label="Invoice Number Prefix"
-                        >
-                            <Input placeholder="e.g., INV, SMS" />
-                        </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                        <Form.Item
-                            name="nextInvoiceNumber"
-                            label="Next Invoice Number"
-                        >
-                            <InputNumber min={1} style={{ width: '100%' }} />
-                        </Form.Item>
-                    </Col>
+                
+            
                 </Row>
             ),
         },
@@ -267,45 +236,17 @@ const Settings = () => {
                             <Switch />
                         </Form.Item>
                     </Col>
-                    <Col span={24}>
-                        <Form.Item
-                            name="autoReminders"
-                            label="Enable Auto Reminders"
-                            valuePropName="checked"
-                        >
-                            <Switch />
-                        </Form.Item>
-                    </Col>
+                    
                     <Col span={12}>
                         <Form.Item
-                            name="reminderDays"
+                            name="reminderGapDays"
                             label="Send Reminder After (days)"
                         >
                             <InputNumber min={1} max={30} style={{ width: '100%' }} />
                         </Form.Item>
                     </Col>
-                    <Col span={12}>
-                        <Form.Item label="Test Connection">
-                            <Button
-                                icon={<WhatsAppOutlined />}
-                                onClick={handleTestWhatsApp}
-                                style={{ background: '#25D366', borderColor: '#25D366', color: '#fff' }}
-                            >
-                                Test WhatsApp
-                            </Button>
-                        </Form.Item>
-                    </Col>
-                    <Col span={24}>
-                        <Form.Item
-                            name="whatsappTemplate"
-                            label="Default Message Template"
-                        >
-                            <TextArea
-                                rows={4}
-                                placeholder="Use {customer_name}, {amount}, {invoice_no} as placeholders"
-                            />
-                        </Form.Item>
-                    </Col>
+                    
+                
                 </Row>
             ),
         },
